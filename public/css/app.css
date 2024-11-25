@@ -1,0 +1,9 @@
+/* Em telas pequenas, a navbar terá a largura reduzida */
+@media (max-width: 768px) {
+    .lg:w-64 {
+        width: 4rem; /* Navbar com largura reduzida em telas menores */
+    }
+    .ml-16 {
+        margin-left: 4rem; /* Ajuste o conteúdo para não sobrepor a navbar */
+    }
+}
