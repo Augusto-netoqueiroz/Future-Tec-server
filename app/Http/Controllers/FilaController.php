@@ -1,0 +1,155 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class FilaController extends Controller
+{
+    // Exibe a página principal de filas
+    public function index()
+    {
+        $filas = DB::table('queues')->get();
+        return view('filas.filas', compact('filas'));
+    }
+
+    // Exibe o formulário de criação de fila
+    public function create()
+    {
+        return view('filas.create');
+    }
+
+    // Salva uma nova fila no banco de dados
+    public function store(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|unique:queues,id',
+            'name' => 'required|string|max:255',
+            'strategy' => 'required|string|max:255',
+            'timeout' => 'required|integer',
+        ]);
+
+        DB::table('queues')->insert([
+            'id' => $request->id,
+            'name' => $request->name,
+            'strategy' => $request->strategy,
+            'timeout' => $request->timeout,
+        ]);
+
+        return redirect()->route('filas.index')->with('success', 'Fila criada com sucesso!');
+    }
+
+   // Exibe a tela de gerenciamento de membros da fila
+public function manageMembers($id)
+{
+    $fila = DB::table('queues')->where('id', $id)->first();
+
+    if (!$fila) {
+        return redirect()->route('filas.index')->with('error', 'Fila não encontrada.');
+    }
+
+    // Recupera os membros da fila
+    $members = DB::table('queue_members')
+        ->leftJoin('users', DB::raw('CONVERT(queue_members.member_name USING utf8mb4)'), '=', DB::raw('CONVERT(users.name USING utf8mb4)'))
+        ->where('queue_members.queue_name', $fila->name)
+        ->select('queue_members.*', 'users.name as membername')
+        ->get();
+
+    // Recupera usuários disponíveis para associação (que não estão na fila)
+    $users = DB::table('users')
+        ->whereNotIn('id', function ($query) use ($fila) {
+            $query->select('user_id')
+                ->from('queue_members')
+                ->where('queue_name', $fila->name);
+        })
+        ->get();
+
+    return view('filas.manage', compact('fila', 'members', 'users'));
+}
+
+
+
+    // Associa um membro à fila
+    public function associateMember(Request $request, $id)
+    {
+        $request->validate([
+            'user_ids' => 'required|array',
+            'penalty' => 'required|integer',
+            'paused' => 'required|boolean',
+        ]);
+    
+        $queue = DB::table('queues')->where('id', $id)->first();
+    
+        if (!$queue) {
+            return redirect()->route('filas.index')->with('error', 'Fila não encontrada.');
+        }
+    
+        // Recupera o último uniqueid
+        $lastUniqueId = DB::table('queue_members')->max('uniqueid');
+        $nextUniqueId = $lastUniqueId ? (int) $lastUniqueId + 1 : 1; // Incrementa o último ID ou começa em 1
+    
+        foreach ($request->user_ids as $userId) {
+            $userName = DB::table('users')->where('id', $userId)->value('name');
+        
+            if (!$userName) {
+                continue; // Pula caso o usuário não exista
+            }
+        
+            // Insere o registro no banco
+            DB::table('queue_members')->insert([
+                'queue_name' => $queue->name,
+                'member_name' => $userName,
+                'interface' => '', // Deixe vazio ou ajuste conforme necessário
+                'state_interface' => null,
+                'penalty' => $request->penalty ?? 0,
+                'paused' => $request->paused ?? 0,
+                'queue_id' => $id,
+                'user_id' => $userId,
+                'uniqueid' => uniqid('', true), // Gera um uniqueid realmente único
+            ]);
+        }
+
+    return redirect()->route('filas.manage', $id)->with('success', 'Membro(s) associado(s) à fila com sucesso!');
+}
+
+
+    // Remove um membro da fila
+    public function removeMember($filaId, $userId)
+    {
+        // Remova o membro da fila
+        DB::table('queue_members')->where('queue_id', $filaId)->where('user_id', $userId)->delete();
+    
+        // Redirecione com uma mensagem de sucesso
+        return redirect()->route('filas.manage', $filaId)->with('success', 'Membro removido com sucesso!');
+    }
+
+    // Atualiza o estado de um membro na fila
+    public function updateMemberState(Request $request, $queueId, $uniqueid)
+{
+    $request->validate([
+        'paused' => 'required|boolean',
+        'penalty' => 'required|integer',
+    ]);
+
+    $member = DB::table('queue_members')
+        ->where('queue_name', $queueId)
+        ->where('uniqueid', $uniqueid)
+        ->first();
+
+    if (!$member) {
+        return redirect()->route('filas.manage', $queueId)->with('error', 'Membro não encontrado.');
+    }
+
+    DB::table('queue_members')
+        ->where('queue_name', $queueId)
+        ->where('uniqueid', $uniqueid)
+        ->update([
+            'paused' => $request->paused,
+            'penalty' => $request->penalty,
+        ]);
+
+    return redirect()->route('filas.manage', $queueId)->with('success', 'Estado do membro atualizado com sucesso!');
+    }
+
+}

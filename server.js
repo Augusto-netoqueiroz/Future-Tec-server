@@ -9,9 +9,20 @@ dotenv.config();
 
 // Criar servidor HTTP
 const httpServer = createServer();
+const httpServerWapp = createServer();  // Novo servidor HTTP para a instância 3080
 
-// Criar servidor Socket.IO com configurações CORS
+// Criar servidor Socket.IO com configurações CORS para a porta 3000
 const io = new Server(httpServer, {
+    cors: {
+        origin: "http://93.127.212.237:8082", // Substitua pela URL do seu frontend
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['Content-Type'],
+        credentials: false, // Permitir cookies e headers de autenticação
+    },
+});
+
+// Criar servidor Socket.IO com configurações CORS para a porta 3080 (nova instância)
+const ioWapp = new Server(httpServerWapp, {
     cors: {
         origin: "http://93.127.212.237:8082", // Substitua pela URL do seu frontend
         methods: ['GET', 'POST'],
@@ -46,6 +57,7 @@ let callIntervals = new Map();  // Map para gerenciar os intervalos de chamadas
 ami.on('managerevent', (event) => {
     // Emitir os logs para o frontend
     io.emit('new_event', event);
+    ioWapp.emit('new_event', event);  // Emitir para a segunda instância também
 
     // Quando o ramal inicia uma ligação (ligando)
     if (event.event === 'Newchannel' && event.privilege === 'call,all' && event.exten !== 's') {
@@ -148,7 +160,6 @@ ami.on('managerevent', (event) => {
     }
 });
 
-
 // Lidar com erros de AMI
 ami.on('error', (err) => {
     console.error('Erro na conexão AMI:', err);
@@ -168,4 +179,9 @@ ami.action({
 // Iniciar o servidor Socket.IO na porta 3000
 httpServer.listen(3000, '0.0.0.0', () => {
     console.log('Servidor Socket.IO rodando na porta 3000...');
+});
+
+// Iniciar o servidor Socket.IO na porta 3080 (nova instância)
+httpServerWapp.listen(3080, '0.0.0.0', () => {
+    console.log('Servidor Socket.IO (SocketWapp) rodando na porta 3080...');
 });

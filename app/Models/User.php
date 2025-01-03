@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'cargo',
     ];
 
     /**
@@ -45,4 +46,44 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+
+
+    public function sippeers()
+    {
+    return $this->hasMany(Sippeer::class, 'id_user', 'id');
+    }   
+
+public function queues()
+    {
+    return $this->hasMany(Queue::class, 'id_user', 'id');
+    }
+
+public function queueMembers()
+    {
+    return $this->hasMany(QueueMember::class, 'id_user', 'id');
+    }
+
+    public function agent()
+    {
+    return $this->hasOne(UserAgent::class);
+    }
+
+    public function isAdmin()
+    {
+        return $this->cargo === 'Administrador';
+    }
+    
+    public function isSupervisor()
+    {
+        return $this->cargo === 'Supervisor';
+    }
+    
+    public function isAtendente()
+    {
+        return $this->cargo === 'Atendente';
+    }
+
 }
+
+

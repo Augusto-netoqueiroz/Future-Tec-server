@@ -37,6 +37,16 @@
             <input type="password" class="form-control" id="password" name="password">
         </div>
 
+        <div class="mb-3">
+            <label for="cargo" class="form-label">Cargo</label>
+            <select class="form-control" id="cargo" name="cargo" required>
+                <option value="Administrador" {{ old('cargo', $user->cargo) == 'Administrador' ? 'selected' : '' }}>Administrador</option>
+                <option value="Gerente" {{ old('cargo', $user->cargo) == 'Gerente' ? 'selected' : '' }}>Gerente</option>
+                <option value="Operador" {{ old('cargo', $user->cargo) == 'Operador' ? 'selected' : '' }}>Operador</option>
+                <option value="Outro" {{ old('cargo', $user->cargo) == 'Outro' ? 'selected' : '' }}>Outro</option>
+            </select>
+        </div>
+
         <button type="submit" class="btn btn-warning">Atualizar</button>
     </form>
 @endsection

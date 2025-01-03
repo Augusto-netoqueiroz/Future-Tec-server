@@ -23,6 +23,7 @@
                 <th>Ramal</th>
                 <th>Estado</th>
                 <th>IP</th>
+                <th>Contexto</th> 
                 <th>Ações</th>
             </tr>
         </thead>
@@ -43,6 +44,7 @@
                         </span>
                     </td>
                     <td>{{ $ramal->ipaddr }}</td>
+                    <td>{{ $ramal->context }}</td> 
                     <td>
                         <a href="{{ route('ramais.edit', $ramal->id) }}" class="btn btn-warning btn-sm">Editar</a>
 

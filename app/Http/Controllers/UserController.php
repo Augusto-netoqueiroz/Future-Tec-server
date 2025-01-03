@@ -5,167 +5,219 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth; // Importação do Auth
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    // Exibe a página de login
     public function showLoginForm()
     {
         return view('login');
     }
 
-    // Autentica o usuário
     public function login(Request $request)
     {
-        // Validação da requisição
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        // Busca o usuário no banco de dados
         $user = User::where('email', $request->email)->first();
 
-        // Verifica se o usuário existe
         if ($user) {
-            // Verifica o formato do hash e valida a senha
-            if ($this->isBcrypt($user->password)) {
-                if (Hash::check($request->password, $user->password)) {
-                    Auth::login($user); // Define o usuário autenticado
-                    return redirect()->route('home'); // Redireciona para a rota home
-                }
-            } elseif ($this->isMd5($user->password)) {
-                // Se for MD5, valida e converte para bcrypt
-                if (md5($request->password) === $user->password) {
-                    $user->password = Hash::make($request->password);
-                    $user->save();
+            if ($this->isBcrypt($user->password) && Hash::check($request->password, $user->password)) {
+                Auth::login($user);
+                return redirect()->route('home');
+            } elseif ($this->isMd5($user->password) && md5($request->password) === $user->password) {
+                $user->password = Hash::make($request->password);
+                $user->save();
 
-                    session(['user' => $user]);
-                    return redirect()->route('home');
-                }
+                Auth::login($user);
+                return redirect()->route('home');
             }
 
-            // Se não for válido em nenhum formato
             return back()->withErrors(['login_error' => 'Credenciais inválidas']);
         }
 
-        // Se o usuário não for encontrado
         return back()->withErrors(['login_error' => 'Credenciais inválidas']);
     }
 
-    // Função para verificar se a senha está no formato bcrypt
     private function isBcrypt($hash)
     {
         return preg_match('/^\$2y\$/', $hash);
     }
 
-    // Função para verificar se a senha está no formato MD5
     private function isMd5($hash)
     {
         return strlen($hash) === 32 && ctype_xdigit($hash);
     }
 
-    // Logout
-    
     public function logout(Request $request)
-{
-    // Obtém o usuário autenticado
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    // Verifica se o usuário está autenticado
-    if ($user) {
-        // Desassocia o ramal do usuário, removendo user_id e user_name
-        DB::table('sippeers')
-            ->where('user_id', $user->id)
-            ->orWhere('user_name', $user->name) // Adiciona a verificação pelo user_name
-            ->update([
-                'user_id' => null,
-                'user_name' => null, // Remove também o user_name
-            ]);
+        if ($user) {
+            $loginLog = DB::table('login_logs')
+                ->where('user_id', $user->id)
+                ->whereNull('logout_time')
+                ->orderBy('login_time', 'desc')
+                ->first();
+
+            if ($loginLog) {
+                $loginTime = Carbon::parse($loginLog->login_time);
+                $logoutTime = Carbon::now();
+                $sessionDuration = $loginTime->diffInSeconds($logoutTime);
+
+                DB::table('login_logs')
+                    ->where('id', $loginLog->id)
+                    ->update([
+                        'logout_time' => $logoutTime,
+                        'session_duration' => $sessionDuration,
+                    ]);
+            }
+
+            // Limpar a coluna `interface` na tabela `queue_members`
+            DB::table('queue_members')
+                ->where('user_id', $user->id)
+                ->update(['interface' => null]);
+
+            DB::table('agente_ramal_vinculo')
+                ->where('agente_id', $user->id)
+                ->whereNull('fim_vinculo')
+                ->update(['fim_vinculo' => Carbon::now()]);
+
+                 // Limpeza do SIP e logout
+            DB::table('sippeers')
+                ->where('user_id', $user->id)
+                ->orWhere('user_name', $user->name)
+                ->update(['user_id' => null, 'user_name' => null]);
+
+            session()->flush();
+            Auth::logout();
+
+            return redirect()->route('login');
+        }
+
+        return redirect()->route('login');
     }
 
-    // Limpa a sessão
-    session()->flush();
+    public function logoutUser($id)
+    {
+        try {
+            DB::table('sessions')->where('user_id', $id)->delete();
 
-    // Faz o logout do usuário
-    Auth::logout();
+            DB::table('agente_ramal_vinculo')
+                ->where('agente_id', $id)
+                ->whereNull('fim_vinculo')
+                ->update(['fim_vinculo' => now()]);
 
-    // Redireciona para a página de login
-    return redirect()->route('login');
-}
+            DB::table('queue_members')
+                ->where('user_id', $id)
+                ->update(['interface' => null]);
 
+            $user = User::find($id);
+            if ($user && Auth::id() == $id) {
+                Auth::logout();
+                session()->invalidate();
+                session()->regenerateToken();
+            }
+
+            if (Auth::id() == $id) {
+                Auth::logout();
+                session()->invalidate();
+                session()->regenerateToken();
+                return redirect()->route('login')->with('success', 'Sessão encerrada com sucesso.');
+            }
+
+            return redirect()->route('users.index')->with('success', 'Sessão encerrada com sucesso.');
+        } catch (\Exception $e) {
+            return redirect()->route('users.index')->with('error', 'Erro ao encerrar a sessão: ' . $e->getMessage());
+        }
+    }
 
     public function index()
     {
-        $users = User::all();  // ou qualquer lógica que você precise
+        $users = User::all();
+
+        $users->map(function ($user) {
+            $session = DB::table('sessions')->where('user_id', $user->id)->first();
+            $user->is_online = $session ? true : false;
+            $user->ip_address = $session ? $session->ip_address : null;
+            return $user;
+        });
+
         return view('users.index', compact('users'));
     }
 
     public function create()
     {
-        return view('users.create'); // Crie a view 'users.create' para o formulário
+        return view('users.create');
     }
 
-    // Método para armazenar o novo usuário no banco de dados
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
+            'cargo' => 'required|string|max:255',
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'cargo' => $request->cargo,
         ]);
 
         return redirect()->route('users.index')->with('success', 'Usuário criado com sucesso!');
     }
 
     public function edit($id)
-{
-    // Busca o usuário pelo ID
-    $user = User::findOrFail($id);
-
-    // Retorna a view com os dados do usuário para edição
-    return view('users.edit', compact('user'));
-}
-
-public function update(Request $request, $id)
-{
-    // Validação dos dados recebidos
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email,' . $id,
-        'password' => 'nullable|string|min:8|confirmed',
-    ]);
-
-    try {
-        // Busca o usuário pelo ID
+    {
         $user = User::findOrFail($id);
-
-        // Atualiza os dados do usuário
-        $user->name = $request->name;
-        $user->email = $request->email;
-
-        // Se a senha foi informada, atualiza
-        if ($request->password) {
-            $user->password = bcrypt($request->password);
-        }
-
-        $user->save();
-
-        // Mensagem de sucesso
-        return redirect()->route('users.index')->with('success', 'Usuário atualizado com sucesso!');
-    } catch (\Exception $e) {
-        // Em caso de erro, você pode capturar a exceção e exibir uma mensagem de erro
-        return back()->with('error', 'Ocorreu um erro ao atualizar o usuário. Tente novamente.');
+        return view('users.edit', compact('user'));
     }
-}
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'cargo' => 'required|string|max:255',
+        ]);
 
+        try {
+            $user = User::findOrFail($id);
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->cargo = $request->cargo;
+
+            if ($request->password) {
+                $user->password = bcrypt($request->password);
+            }
+
+            $user->save();
+            return redirect()->route('users.index')->with('success', 'Usuário atualizado com sucesso!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Ocorreu um erro ao atualizar o usuário. Tente novamente.');
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            DB::table('sessions')->where('user_id', $id)->delete();
+
+            $user->delete();
+            return redirect()->route('users.index')->with('success', 'Usuário deletado com sucesso!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erro ao tentar deletar o usuário. Tente novamente.');
+        }
+    }
 }
