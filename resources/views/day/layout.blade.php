@@ -783,39 +783,54 @@ License: For each use you must have a valid license purchased only from above li
 							</div>
 						@endif
 						
-						<div class="container mt-5">
-    <!-- Botão de Seleção de Pausa -->
-    <button id="pauseToggleButton" class="btn btn-primary">Selecionar Pausa</button>
+						
+						<!-- Contêiner para centralizar o botão em relação ao contador -->
 
-    <!-- Modal de Pausas -->
-    <div id="pauseModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="pauseModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="pauseModalLabel">Escolher Pausa</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <ul id="pauseList" class="list-group">
-              <!-- Lista de pausas carregada via JavaScript -->
-            </ul>
-            <div id="errorMessage" class="text-danger mt-2" style="display: none;">Erro ao carregar pausas!</div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            <button type="button" class="btn btn-primary" id="confirmPauseButton" disabled>Confirmar</button>
-          </div>
+
+  <!-- Botão de Seleção de Pausa centralizado -->
+  <button id="pauseToggleButton" class="btn btn-primary" style="font-size: 12px; padding: 6px 24px; border-radius: 5px; background-color: #007bff; color: #fff; border: 1px solid #ddd; cursor: pointer; height: 40px; width: 220px; margin-top: 10px;">
+    Selecionar Pausa
+  </button>
+</div>
+
+
+
+  <!-- Modal de Pausas -->
+  <div id="pauseModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="pauseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pauseModalLabel">Escolher Pausa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <ul id="pauseList" class="list-group">
+            <!-- Lista de pausas carregada via JavaScript -->
+          </ul>
+          <div id="errorMessage" class="text-danger mt-2" style="display: none;">Erro ao carregar pausas!</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          <button type="button" class="btn btn-primary" id="confirmPauseButton" disabled>Confirmar</button>
         </div>
       </div>
     </div>
-
-    <!-- Informações de Status -->
-    <div id="statusContainer" class="mt-3">
-      <div id="onlineTimer">Tempo Disponível: 00:00:00</div>
-      <div id="pauseTimer" style="display: none;">Tempo na Pausa: 00:00:00</div>
-      <div id="currentStatus">Status: Disponível</div>
-    </div>
   </div>
+
+  <!-- Início contador do tempo de pausa-->
+<div id="statusContainer" class="mt-3">
+  <div id="onlineTimer" style="font-size: 12px; font-weight: bold; color: #4caf50; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #e8f5e9; margin-bottom: 4px; max-width: 170px; text-align: center;">
+    Tempo Disponível: 00:00:00
+  </div>
+  <div id="pauseTimer" style="display: none; font-size: 12px; font-weight: bold; color: #ff9800; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #fff3e0; margin-bottom: 4px; max-width: 170px; text-align: center;">
+    Tempo na Pausa: 00:00:00
+  </div>
+  <div id="currentStatus" style="font-size: 12px; font-weight: bold; color: #ffffff; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #4caf50; max-width: 170px; text-align: center;">
+    Status: Disponível
+  </div>
+</div>
+<!-- Fim contador do tempo de pausa-->
+
 
 
 
@@ -6436,6 +6451,18 @@ License: For each use you must have a valid license purchased only from above li
       }
     };
 
+    // Atualiza a cor do status com base no texto
+    const updateStatusColor = () => {
+      const statusText = currentStatusElement.textContent.trim();
+      if (statusText.includes('Disponível')) {
+        currentStatusElement.style.backgroundColor = '#e8f5e9'; // Verde claro
+        currentStatusElement.style.color = '#4caf50'; // Texto verde escuro
+      } else {
+        currentStatusElement.style.backgroundColor = '#fff3e0'; // Amarelo claro
+        currentStatusElement.style.color = '#ff9800'; // Texto laranja
+      }
+    };
+
     // Converte o formato 'YYYY-MM-DD HH:mm:ss' para um objeto Date
     const parseDateTime = (dateTimeString) => {
       const [datePart, timePart] = dateTimeString.split(' ');
@@ -6452,6 +6479,7 @@ License: For each use you must have a valid license purchased only from above li
       pauseTimerElement.style.display = 'none';
       currentStatusElement.textContent = 'Status: Disponível';
       pauseButton.textContent = 'Selecionar Pausa';
+      updateStatusColor(); // Atualiza a cor do status
     };
 
     // Gerencia o timer de pausa
@@ -6462,6 +6490,7 @@ License: For each use you must have a valid license purchased only from above li
       onlineTimerElement.style.display = 'none';
       currentStatusElement.textContent = `Status: ${pauseName}`;
       pauseButton.textContent = 'Liberar Pausa';
+      updateStatusColor(); // Atualiza a cor do status
     };
 
     // Carrega o último log de pausa ao carregar a página
@@ -6490,6 +6519,7 @@ License: For each use you must have a valid license purchased only from above li
         console.error('Erro ao buscar último log de pausa:', error);
         startOnlineTimer(); // Fallback para disponibilidade
       }
+      updateStatusColor(); // Atualiza a cor do status
     };
 
     // Carrega as pausas no modal
