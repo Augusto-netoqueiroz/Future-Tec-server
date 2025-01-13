@@ -50,25 +50,26 @@ License: For each use you must have a valid license purchased only from above li
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 		<meta name="csrf-token" content="{{ csrf_token() }}">
 	</head>
-	<body>
-	</body>
+	<!--end::Head-->
 </html>
 
-	<!--end::Head-->
-	<!--begin::Body-->
+	<!--Script para autenticar a rota-->
 	@if (!Auth::check())
     <script>
         window.location.href = "{{ route('login') }}";
     </script>
+	<!--Script para autenticar a rota-->
+
 	@endif
+	<!--begin::Body-->
 	<body id="kt_app_body" data-kt-app-header-fixed="true" data-kt-app-header-fixed-mobile="true" data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-hoverable="true" data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true" data-kt-app-toolbar-enabled="true" data-kt-app-aside-enabled="true" data-kt-app-aside-fixed="true" data-kt-app-aside-push-toolbar="true" data-kt-app-aside-push-footer="true" class="app-default">
 		<!--begin::Theme mode setup on page load-->
 		<script>var defaultThemeMode = "light"; var themeMode; if ( document.documentElement ) { if ( document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if ( localStorage.getItem("data-bs-theme") !== null ) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
 		<!--end::Theme mode setup on page load-->
 		<!--begin::App-->
-		<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+		
 			<!--begin::Page-->
-			<div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+			
 				<!--begin::Header-->
 				<div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
 					<!--begin::Header main-->
@@ -145,66 +146,56 @@ License: For each use you must have a valid license purchased only from above li
 									<!--end::Form-->
 									
 							</div>
-							<!--begin::User menu-->
-
-
+							
+							<!--Script para atualizar sessão-->
 							@if(session('success'))
 							<div class="alert alert-success alert-dismissible fade show" role="alert">
 								{{ session('success') }}
 								<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 							</div>
-						@endif
+							@endif
+							<!--Script para atualizar sessão-->
 						
-						
-						 
+							<!-- Botão para selecionar a pausa -->
+									<button id="pauseToggleButton" class="btn btn-primary" style="margin-left: 810px;">Selecionar Pausa</button>
+									</div>
+									</div>
+							<!-- Botão para selecionar a pausa -->
 
-
-   <!-- Botão para selecionar a pausa -->
-		<button id="pauseToggleButton" class="btn btn-primary" style="margin-left: 810px;">Selecionar Pausa</button>
-		</div>
-		</div>
-
-<!-- Botão para selecionar a pausa -->
-
-  <!-- Modal de Pausas -->
-  <div id="pauseModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="pauseModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="pauseModalLabel">Escolher Pausa</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <ul id="pauseList" class="list-group">
-            <!-- Lista de pausas carregada via JavaScript -->
-          </ul>
-          <div id="errorMessage" class="text-danger mt-2" style="display: none;">Erro ao carregar pausas!</div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-          <button type="button" class="btn btn-primary" id="confirmPauseButton" disabled>Confirmar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Início contador do tempo de pausa-->
-<div id="statusContainer" class="mt-3">
-  <div id="onlineTimer" style="font-size: 12px; font-weight: bold; color: #4caf50; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #e8f5e9; margin-bottom: 4px; max-width: 170px; text-align: center;">
-    Tempo Disponível: 00:00:00
-  </div>
-  <div id="pauseTimer" style="display: none; font-size: 12px; font-weight: bold; color: #ff9800; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #fff3e0; margin-bottom: 4px; max-width: 170px; text-align: center;">
-    Tempo na Pausa: 00:00:00
-  </div>
-  <div id="currentStatus" style="font-size: 12px; font-weight: bold; color: #ffffff; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #4caf50; max-width: 170px; text-align: center;">
-    Status: Disponível
-  </div>
-</div>
-<!-- Fim contador do tempo de pausa-->
-
-
-
-
+							<!-- Modal de Pausas -->
+							<div id="pauseModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="pauseModalLabel" aria-hidden="true">
+								<div class="modal-dialog modal-dialog-centered" role="document">
+								<div class="modal-content">
+									<div class="modal-header">
+									<h5 class="modal-title" id="pauseModalLabel">Escolher Pausa</h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+									<div class="modal-body">
+									<ul id="pauseList" class="list-group">
+										<!-- Lista de pausas carregada via JavaScript -->
+									</ul>
+									<div id="errorMessage" class="text-danger mt-2" style="display: none;">Erro ao carregar pausas!</div>
+									</div>
+									<div class="modal-footer">
+									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+									<button type="button" class="btn btn-primary" id="confirmPauseButton" disabled>Confirmar</button>
+									</div>
+								</div>
+								</div>
+							</div>
+							<!-- Início contador do tempo de pausa-->
+							<div id="statusContainer" class="mt-3">
+								<div id="onlineTimer" style="font-size: 12px; font-weight: bold; color: #4caf50; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #e8f5e9; margin-bottom: 4px; max-width: 170px; text-align: center;">
+									Tempo Disponível: 00:00:00
+								</div>
+								<div id="pauseTimer" style="display: none; font-size: 12px; font-weight: bold; color: #ff9800; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #fff3e0; margin-bottom: 4px; max-width: 170px; text-align: center;">
+									Tempo na Pausa: 00:00:00
+								</div>
+								<div id="currentStatus" style="font-size: 12px; font-weight: bold; color: #ffffff; padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; background-color: #4caf50; max-width: 170px; text-align: center;">
+									Status: Disponível
+								</div>
+							</div>
+							<!-- Fim contador do tempo de pausa-->
 							<div class="app-navbar-item ms-3 ms-lg-4 me-lg-2" id="kt_header_user_menu_toggle">
 								<!--begin::Menu wrapper-->
 								<!--begin::Menu wrapper-->
@@ -218,7 +209,6 @@ License: For each use you must have a valid license purchased only from above li
 										<img src="/path/to/default-avatar.png" alt="Usuário" />
 									@endif
 								</div>
-
 								<!--begin::User account menu-->
 								<div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px" data-kt-menu="true">
 									<!--begin::Menu item-->
@@ -586,9 +576,9 @@ License: For each use you must have a valid license purchased only from above li
 									<span class="menu-link">
 										<span class="menu-icon">
 											<!-- Ícone do Menu -->
-											<i class="ki-duotone ki-some-files fs-1">
-												<span class="path1"></span>
-												<span class="path2"></span>
+											<i class="ki-duotone ki-gear">
+											<span class="path1"></span>
+											<span class="path2"></span>
 											</i>
 										</span>
 										<span class="menu-title">Administração</span>
@@ -620,12 +610,8 @@ License: For each use you must have a valid license purchased only from above li
 									</div>
 								</div>
 								<!-- Fim do Menu Administração -->		
-							
-							
-			
 							</div>
 							<!--end::Sidebar menu-->
-							
 						</div>
 						<!--end::Main-->
 					</div>
@@ -635,49 +621,35 @@ License: For each use you must have a valid license purchased only from above li
 						<!--begin::Content wrapper-->
 						<div class="d-flex flex-column flex-column-fluid">
 							<!--begin::Toolbar-->
-							<div id="kt_app_toolbar" class="app-toolbar pt-5">
+							<div id="kt_app_toolbar" class="app-toolbar pt-3">
 								<!--begin::Toolbar container-->
 								<div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
 									<!--begin::Toolbar wrapper-->
 									<div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
-										<!--begin::Page title-->
-										<div class="page-title d-flex flex-column gap-1 me-3 mb-2">
-											
-											<!--begin::Title-->
-											<h1 class="page-heading d-flex flex-column justify-content-center text-dark fw-bolder fs-1 lh-0"></h1>
-											<!--end::Title-->
-										</div>
-										<!--end::Page title-->
-										
 									</div>
 									<!--end::Toolbar wrapper-->
 								</div>
 								<!--end::Toolbar container-->
 							</div>
 							<!--end::Toolbar-->
-							<!--begin::Content-->
+							<!--Conteudo blade-->
 							<div id="kt_app_content" class="app-content flex-column-fluid">
-							
 								@yield('content') 
-								
-							<!--end::Content-->
-						</div>
-						<!--end::Content wrapper-->
+							</div>
+							<!--Conteudo blade-->
+							<!--end::Content wrapper-->
 						<!--begin::Footer-->
 						<div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
 							<!--begin::Copyright-->
 							<div class="text-dark order-2 order-md-1">
 								<span class="text-muted fw-semibold me-1">2025&copy;</span>
-								<a href="https://keenthemes.com" target="_blank" class="text-gray-800 text-hover-primary">Future Tec</a>
+								<a target="_blank" class="text-gray-800 text-hover-primary">Future Tec</a>
 							</div>
 							<!--end::Copyright-->
-							
 						</div>
 						<!--end::Footer-->
 					</div>
 					<!--end:::Main-->
-					
-		
 		<!--end::App-->
 		<!--begin::Drawers-->
 		<!--begin::Activities drawer-->
@@ -699,43 +671,7 @@ License: For each use you must have a valid license purchased only from above li
 				<!--begin::Body-->
 				<div class="card-body position-relative" id="kt_activities_body">
 					<!--begin::Content-->
-					<div id="kt_activities_scroll" class="position-relative scroll-y me-n5 pe-5" data-kt-scroll="true" data-kt-scroll-height="auto" data-kt-scroll-wrappers="#kt_activities_body" data-kt-scroll-dependencies="#kt_activities_header, #kt_activities_footer" data-kt-scroll-offset="5px">
-						<!--begin::Timeline items-->
-						<div class="timeline">
-							<!--begin::Timeline item-->
-							<div class="timeline-item">
-								<!--begin::Timeline line-->
-								<div class="timeline-line w-40px"></div>
-								<!--end::Timeline line-->
-								<!--begin::Timeline icon-->
-								<div class="timeline-icon symbol symbol-circle symbol-40px me-4">
-									<div class="symbol-label bg-light">
-										<i class="ki-duotone ki-message-text-2 fs-2 text-gray-500">
-											<span class="path1"></span>
-											<span class="path2"></span>
-											<span class="path3"></span>
-										</i>
-									</div>
-								</div>
-								<!--end::Timeline icon-->
-				
-								
-						<!--begin::Notice-->
-						<div class="d-flex flex-stack">
-							<!--begin::Label-->
-							<div class="me-5 fw-semibold">
-								<label class="fs-6">Adding Users by Team Members</label>
-								<div class="fs-7 text-muted">If you need more info, please check budget planning</div>
-							</div>
-							<!--end::Label-->
-							<!--begin::Switch-->
-							<label class="form-check form-switch form-check-custom form-check-solid">
-								<input class="form-check-input" type="checkbox" value="1" checked="checked" />
-								<span class="form-check-label fw-semibold text-muted">Allowed</span>
-							</label>
-							<!--end::Switch-->
-						</div>
-						<!--end::Notice-->
+					<div id="kt_activities_scroll" class="position-relative scroll-y me-n5 pe-5" data-kt-scroll="true" data-kt-scroll-height="auto" data-kt-scroll-wrappers="#kt_activities_body" data-kt-scroll-dependencies="#kt_activities_header, #kt_activities_footer" data-kt-scroll-offset="5px">				
 					</div>
 					<!--end::Modal body-->
 				</div>

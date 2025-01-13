@@ -214,6 +214,8 @@ Route::post('/finish', [PauseController::class, 'finish'])->name('finish');
    Route::get('/pauses/last', [PauseController::class, 'getLastPause'])->name('pauses.last');
 
 
+   
+
 
 
 
