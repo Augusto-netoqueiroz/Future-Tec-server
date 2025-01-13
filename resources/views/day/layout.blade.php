@@ -957,9 +957,7 @@ License: For each use you must have a valid license purchased only from above li
 									
 									<!--begin::opção de pausa-->
 									<div class="d-flex align-items-center">
-									<button id="pauseToggleButton" class="btn btn-outline-primary">
-										<i class="ki-duotone ki-pause"></i> <span id="pauseButtonText">Entrar em Pausa</span>
-									</button>
+									
 
 									<form id="pauseToggleForm" action="{{ route('users.togglePause') }}" method="POST" style="display: none;">
 										@csrf
