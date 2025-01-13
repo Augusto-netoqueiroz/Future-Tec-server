@@ -49745,3 +49745,10 @@ body,
   background-color: #007bff;
   color: white;
 }
+
+
+#pauseToggleButton {
+  float: right; /* Alinha o botão à direita */
+  margin-right: 10px; /* Adiciona um pequeno espaço à direita */
+  margin-top: 10px; /* Adiciona um pequeno espaço acima */
+}
