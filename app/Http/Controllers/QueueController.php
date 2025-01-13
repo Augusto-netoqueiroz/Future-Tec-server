@@ -128,4 +128,43 @@ class FilaController extends Controller
 
         return redirect()->route('filas.manage', $queueId)->with('success', 'Membro removido da fila com sucesso!');
     }
+
+
+//###########################
+
+
+// Recupera o estado da pausa
+public function getState()
+{
+    $userId = auth()->id();
+    $pauseState = PauseState::where('user_id', $userId)->first();
+
+    if ($pauseState) {
+        return response()->json($pauseState);
+    }
+
+    return response()->json(['message' => 'Nenhum estado encontrado'], 404);
+}
+
+// Salva o estado da pausa
+public function saveState(Request $request)
+{
+    $userId = $request->input('user_id');
+    $state = PauseState::updateOrCreate(
+        ['user_id' => $userId],
+        [
+            'online_start_time' => $request->input('onlineStartTime'),
+            'pause_start_time' => $request->input('pauseStartTime'),
+            'selected_pause_id' => $request->input('selectedPauseId'),
+            'current_status' => $request->input('currentStatus'),
+            'pause_button_text' => $request->input('pauseButtonText'),
+        ]
+    );
+
+    return response()->json(['message' => 'Estado salvo com sucesso']);
+}
+
+
+
+
 }

@@ -1,19 +1,22 @@
-@extends('layouts.app')
+@extends('day.index')
 
-@section('title', 'Filas')
+@section('title', 'Gerenciar Filas')
 
 @section('content')
-<div class="container mt-5">
-    <h1 class="mb-4">Gerenciar Filas</h1>
+<div class="container-xxl py-8">
+    <!-- Título da página -->
+    <h1 class="fs-2 fw-bold text-center mb-6">Gerenciar Filas</h1>
     
-    <!-- Botão para redirecionar para a página de criação de fila -->
-    <a href="{{ route('filas.create') }}" class="btn btn-success mb-4">Criar Nova Fila</a>
+    <!-- Botão para criar uma nova fila -->
+    <div class="d-flex justify-content-end mb-4">
+        <a href="{{ route('filas.create') }}" class="btn btn-success">Criar Nova Fila</a>
+    </div>
 
-    <!-- Lista de filas -->
-    <div class="mt-4">
-        <h3>Filas Existentes</h3>
-        <table class="table">
-            <thead>
+    <!-- Tabela de filas existentes -->
+    <h2 class="fs-4 fw-bold mb-4">Filas Existentes</h2>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
                 <tr>
                     <th scope="col">ID</th>
                     <th scope="col">Nome</th>
@@ -29,15 +32,15 @@
                         <td>{{ $fila->name }}</td>
                         <td>{{ $fila->strategy }}</td>
                         <td>{{ $fila->timeout }}</td>
-                        <td>
+                        <td class="d-flex gap-2">
                             <!-- Link para editar a fila -->
-                            <a href="{{ route('filas.edit', $fila->id) }}" class="btn btn-primary">Editar</a>
+                            <a href="{{ route('filas.edit', $fila->id) }}" class="btn btn-primary btn-sm">Editar</a>
                             
                             <!-- Link para gerenciar os membros da fila -->
-                            <a href="{{ route('filas.manage', $fila->id) }}" class="btn btn-info btn-sm">Gerenciar Membros</a>
+                            <a href="{{ route('filas.manage', $fila->id) }}" class="btn btn-info btn-sm">Membros</a>
                             
                             <!-- Formulário para excluir a fila -->
-                            <form action="{{ route('filas.destroy', $fila->id) }}" method="POST" style="display:inline;">
+                            <form action="{{ route('filas.destroy', $fila->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta fila?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Excluir</button>

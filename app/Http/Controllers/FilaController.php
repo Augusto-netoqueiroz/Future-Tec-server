@@ -40,6 +40,46 @@ class FilaController extends Controller
         return redirect()->route('filas.index')->with('success', 'Fila criada com sucesso!');
     }
 
+
+// Exibe o formulário de edição de uma fila
+public function edit($id)
+{
+    $fila = DB::table('queues')->where('id', $id)->first();
+
+    if (!$fila) {
+        return redirect()->route('filas.index')->with('error', 'Fila não encontrada.');
+    }
+
+    return view('filas.edit', compact('fila'));
+}
+
+// Atualiza uma fila no banco de dados
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'strategy' => 'required|string|max:255',
+        'timeout' => 'required|integer',
+    ]);
+
+    $fila = DB::table('queues')->where('id', $id)->first();
+
+    if (!$fila) {
+        return redirect()->route('filas.index')->with('error', 'Fila não encontrada.');
+    }
+
+    DB::table('queues')
+        ->where('id', $id)
+        ->update([
+            'name' => $request->name,
+            'strategy' => $request->strategy,
+            'timeout' => $request->timeout,
+        ]);
+
+    return redirect()->route('filas.index')->with('success', 'Fila atualizada com sucesso!');
+}
+
+
    // Exibe a tela de gerenciamento de membros da fila
 public function manageMembers($id)
 {

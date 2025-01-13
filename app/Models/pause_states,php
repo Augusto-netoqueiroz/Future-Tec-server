@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class PauseState extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id', 
+        'online_start_time',
+        'pause_start_time',
+        'selected_pause_id',
+        'current_status',
+        'pause_button_text'
+    ];
+}

@@ -201,5 +201,12 @@ public function update(Request $request, $id)
         return redirect()->route('troncos.index')->with('success', 'Tronco atualizado com sucesso!');
     }
 
+    public function destroytronco($id)
+    {
+        DB::table('sippeers')->where('id', $id)->delete();
+
+        return redirect()->route('troncos.index')->with('success', 'Tronco excluído com sucesso!');
+    }
+
 
 }

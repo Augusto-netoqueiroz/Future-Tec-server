@@ -17,19 +17,23 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\CampaignController;
 use \App\Http\Middleware\CheckPermission;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PauseController;
 
-// Rota principal
 Route::get('/', function () {
-    return Auth::check() 
-        ? redirect()->route('home') 
-        : redirect()->route('login');
+    if (Auth::check()) {
+        return redirect()->route('index');
+    }
+    return view('index'); // Renderiza a view do tema para usuários não autenticados
 })->name('root');
 
 // Rota home
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 // Exibe a página de login
+
 Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
+
+
 
 // USER
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -59,6 +63,7 @@ Route::prefix('admin')->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::get('users/create', [UserController::class, 'create'])->name('users.create');
     Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('user.edit');
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
@@ -78,8 +83,6 @@ Route::prefix('ramais')->name('ramais.')->group(function () {
     Route::get('{ramal}/edit', [RamalController::class, 'edit'])->name('edit');
     Route::put('{ramal}', [RamalController::class, 'update'])->name('update');
     Route::delete('{ramal}', [RamalController::class, 'destroy'])->name('destroy');
-    Route::put('{ramal}', [RamalController::class, 'update'])->name('ramais.update');
-
 });
 
 // Relatórios
@@ -131,6 +134,7 @@ Route::prefix('troncos')->name('troncos.')->group(function () {
     Route::post('/', [RamalController::class, 'salvarTronco'])->name('store');
     Route::get('{id}/edit', [RamalController::class, 'editarTronco'])->name('edit');
     Route::put('{id}', [RamalController::class, 'atualizarTronco'])->name('update');
+    Route::delete('{troncos}', [RamalController::class, 'destroytronco'])->name('destroy');
 });
 
 
@@ -151,8 +155,71 @@ Route::get('/teste', function () {
 //DASHBOARD
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-//Verificação de sessão
-Route::group(['middleware' => ['auth', 'verify.session']], function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    // Outras rotas protegidas...
-});
+//Pausas
+Route::resource('pauses', PauseController::class);
+Route::post('/users/toggle-pause', [UserController::class, 'togglePause'])->name('users.togglePause');
+Route::get('/pauses', [PauseController::class, 'index'])->name('pauses.index'); // Lista de pausas
+Route::post('/pauses', [PauseController::class, 'store'])->name('pauses.store'); // Salvar nova pausa
+Route::get('/pauses/{id}/edit', [PauseController::class, 'edit'])->name('pauses.edit'); // Formulário para editar pausa
+Route::put('/pauses/{id}', [PauseController::class, 'update'])->name('pauses.update'); // Atualizar pausa existente
+Route::delete('/pauses/{id}', [PauseController::class, 'destroy'])->name('pauses.destroy'); // Deletar pausa
+
+
+
+// Rota mais específica para retornar todas as pausas
+Route::get('/pauses/getAll', [PauseController::class, 'getAll'])->name('pauses.getAll');
+
+
+
+Route::get('/teste-pause', [PauseController::class, 'test'])->name('pause.teste');
+
+
+Route::get('/chama', [PauseController::class, 'chamapausa'])->name('pausa.chama');
+
+
+Route::post('/pauses/atualizar', [PauseController::class, 'atualizar'])->name('pauses.atualizar');
+
+
+
+Route::get('/status', [PauseController::class, 'obterStatus'])->name('status');
+Route::post('/finish', [PauseController::class, 'finish'])->name('finish');
+
+
+
+    // Retorna a lista de pausas disponíveis
+    Route::get('/pauses', [PauseController::class, 'index']);
+
+    // Retorna a lista de pausas disponíveis
+    
+    Route::get('/Pausas', [PauseController::class, 'showpauses'])->name('Pausas.inicio');
+    Route::get('/Pausas/create', [PauseController::class, 'create'])->name('pauses.create'); // Formulário para criar pausa
+    Route::post('/Pausas/store', [PauseController::class, 'store'])->name('pauses.store'); // Salvar nova pausa
+    Route::get('/pauses/{id}/edit', [PauseController::class, 'edit'])->name('pauses.edit'); // Formulário para editar pausa
+    Route::put('/pauses/{id}', [PauseController::class, 'update'])->name('pauses.update'); // Atualizar pausa existente
+
+    // Inicia uma pausa
+    Route::post('/pauses/start', [PauseController::class, 'startPause']);
+
+
+    // Encerra uma pausa
+    Route::post('/pauses/end', [PauseController::class, 'endPause']);
+    Route::post('/pauses/end', [PauseController::class, 'endPause'])->middleware('auth');
+
+   
+
+
+    Route::get('/user/{userId}/pauses', [PauseController::class, 'getUserPauses']);
+
+   // Defina a rota para o método getLastPause
+   Route::get('/pauses/last', [PauseController::class, 'getLastPause'])->name('pauses.last');
+
+
+
+
+
+
+
+
+
+
+

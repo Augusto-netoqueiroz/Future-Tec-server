@@ -1,6 +1,6 @@
 <!-- rotas/create.blade.php -->
 
-@extends('layouts.app')
+@extends('day.layout')
 
 @section('content')
     <div class="container">

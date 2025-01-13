@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -22,6 +20,9 @@ class User extends Authenticatable
         'email',
         'password',
         'cargo',
+        'avatar',
+        'pause',  // Certifique-se de que o campo 'pause' está presente no $fillable
+        'current_pause_log_id'
     ];
 
     /**
@@ -35,7 +36,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
      * @return array<string, string>
      */
@@ -47,43 +48,54 @@ class User extends Authenticatable
         ];
     }
 
-
-
     public function sippeers()
     {
-    return $this->hasMany(Sippeer::class, 'id_user', 'id');
+        return $this->hasMany(Sippeer::class, 'id_user', 'id');
     }   
 
-public function queues()
+    public function queues()
     {
-    return $this->hasMany(Queue::class, 'id_user', 'id');
+        return $this->hasMany(Queue::class, 'id_user', 'id');
     }
 
-public function queueMembers()
+    public function queueMembers()
     {
-    return $this->hasMany(QueueMember::class, 'id_user', 'id');
+        return $this->hasMany(QueueMember::class, 'id_user', 'id');
     }
 
     public function agent()
     {
-    return $this->hasOne(UserAgent::class);
+        return $this->hasOne(UserAgent::class);
     }
 
     public function isAdmin()
     {
         return $this->cargo === 'Administrador';
     }
-    
+
     public function isSupervisor()
     {
         return $this->cargo === 'Supervisor';
     }
-    
+
     public function isAtendente()
     {
         return $this->cargo === 'Atendente';
     }
 
+    public function logs()
+    {
+        return $this->hasMany(Log::class);
+    }
+
+    public function pauseLogs()
+    {
+        return $this->hasMany(UserPauseLog::class);
+    }
+
+    public function pauses()
+{
+    return $this->hasMany(UserPauseLog::class);
 }
 
-
+}

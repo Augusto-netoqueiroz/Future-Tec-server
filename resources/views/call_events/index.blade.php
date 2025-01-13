@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('day.index')
 
 @section('content')
 <style>

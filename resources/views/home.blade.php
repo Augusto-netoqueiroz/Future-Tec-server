@@ -1,4 +1,4 @@
-@extends('layouts.app')  <!-- Estendendo o layout 'app' -->
+@extends('day.index')  <!-- Estendendo o layout 'app' -->
 
 @section('content')
     <div class="container">

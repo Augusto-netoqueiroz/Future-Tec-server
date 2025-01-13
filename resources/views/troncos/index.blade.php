@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('day.layout')
 
 @section('title', 'Lista de Troncos')
 
@@ -23,6 +23,7 @@
                 <th>Tronco</th>
                 <th>Estado</th>
                 <th>Host</th>
+                <th>IP do Tronco</th> <!-- Nova Coluna -->
                 <th>Contexto</th>
                 <th>Ações</th>
             </tr>
@@ -44,12 +45,13 @@
                         </span>
                     </td>
                     <td>{{ $tronco->host }}</td>
+                    <td>{{ $tronco->ipaddr }}</td> <!-- Exibindo o IP do Tronco -->
                     <td>{{ $tronco->context }}</td>
                     <td>
                         <a href="{{ route('troncos.edit', $tronco->id) }}" class="btn btn-warning btn-sm">Editar</a>
-
+    
                         <!-- Formulário de Deletar -->
-                        <form action="{{ route('ramais.destroy', $tronco->id) }}" method="POST" style="display:inline;">
+                        <form action="{{ route('troncos.destroy', $tronco->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja deletar este tronco?');">
@@ -60,6 +62,6 @@
                 </tr>
             @endforeach
         </tbody>
-    </table>
+    </table>    
 </div>
 @endsection

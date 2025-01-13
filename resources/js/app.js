@@ -1,6 +1,8 @@
 import './bootstrap';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import '../css/tailwind.css';
+
 
 window.Pusher = Pusher;
 
