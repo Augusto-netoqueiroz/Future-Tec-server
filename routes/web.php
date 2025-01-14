@@ -214,7 +214,10 @@ Route::post('/finish', [PauseController::class, 'finish'])->name('finish');
    Route::get('/pauses/last', [PauseController::class, 'getLastPause'])->name('pauses.last');
 
 
-   
+//Relatório de pausas
+Route::get('/relatorio-pausas', [PauseController::class, 'relatorio'])->name('relatorio.pausas');
+Route::post('/relatorio-pausas', [PauseController::class, 'filtrarRelatorio'])->name('relatorio.pausas.filtrar');
+
 
 
 

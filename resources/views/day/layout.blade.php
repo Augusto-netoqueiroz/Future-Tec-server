@@ -542,6 +542,18 @@ License: For each use you must have a valid license purchased only from above li
 											</a>
 										</div>
 
+									
+										<!--begin:Menu link-->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('relatorio.pausas') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Pausas</span>
+											</a>
+										 </div>
+										
+
 
 										<!-- inicio submenu Ligação -->
 										<div class="menu-item">

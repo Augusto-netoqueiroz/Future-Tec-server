@@ -49753,3 +49753,44 @@ body,
   margin-top: 10px; /* Adiciona um pequeno espaço acima */
 }
 
+
+
+/* Estilo para os itens da lista */
+#pauseList .list-group-item {
+  cursor: pointer; /* Cursor de ponteiro para indicar interatividade */
+  transition: background-color 0.3s ease, color 0.3s ease;
+  text-align: center; /* Centraliza o texto dentro do item */
+  font-weight: 500; /* Torna o texto mais visível */
+}
+
+/* Cor de fundo ao passar o mouse */
+#pauseList .list-group-item:hover {
+  background-color: #e9ecef; /* Cinza claro ao passar o mouse */
+  color: #007bff; /* Texto azul para combinar com o tema */
+}
+
+/* Destaque para o item selecionado (se for gerenciado via JS) */
+#pauseList .list-group-item.selected {
+  background-color: #007bff; /* Azul do Bootstrap */
+  color: white; /* Texto branco para contraste */
+}
+
+/* Responsividade do modal */
+@media (max-width: 576px) {
+  #pauseModal .modal-dialog {
+      max-width: 90%; /* Reduz o tamanho do modal em telas menores */
+      margin: 10px auto; /* Adiciona espaçamento nas laterais */
+  }
+  #pauseList .list-group-item {
+      font-size: 14px; /* Fonte menor em telas pequenas */
+      padding: 10px; /* Reduz o preenchimento para caber melhor */
+  }
+}
+
+/* Responsividade em telas médias */
+@media (max-width: 768px) {
+  #pauseList .list-group-item {
+      font-size: 16px; /* Ajusta a fonte em telas médias */
+  }
+}
+

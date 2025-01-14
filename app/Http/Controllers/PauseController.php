@@ -215,6 +215,51 @@ public function getLastPause(Request $request)
 
 
 
+public function relatorio()
+{
+    $usuarios = User::all(); // Substitua pelo seu modelo de usuários
+    return view('pauses.relatorio', compact('usuarios'));
+}
+
+public function filtrarRelatorio(Request $request)
+{
+    $query = DB::table('user_pause_logs')
+        ->join('users', 'users.id', '=', 'user_pause_logs.user_id')
+        ->select(
+            'user_pause_logs.*',
+            'users.name as user_name',
+            DB::raw('TIMESTAMPDIFF(SECOND, started_at, end_at) as duration_seconds')
+        );
+
+    if ($request->filled('start_date') && $request->filled('end_date')) {
+        $query->whereBetween('started_at', [$request->start_date, $request->end_date]);
+    }
+
+    if ($request->filled('user_id')) {
+        $query->where('user_pause_logs.user_id', $request->user_id);
+    }
+
+    $logs = $query->get();
+
+    $resumo = DB::table('user_pause_logs')
+        ->join('users', 'users.id', '=', 'user_pause_logs.user_id')
+        ->select(
+            'users.name as user_name',
+            DB::raw("SUM(CASE WHEN pause_name = 'disponível' THEN TIMESTAMPDIFF(SECOND, started_at, end_at) ELSE 0 END) as total_disponivel"),
+            DB::raw("SUM(CASE WHEN pause_name != 'disponível' THEN TIMESTAMPDIFF(SECOND, started_at, end_at) ELSE 0 END) as total_pausa"),
+            DB::raw("COUNT(DISTINCT(user_pause_logs.user_id)) as total_usuarios")
+        )
+        ->groupBy('user_id')
+        ->get();
+
+    return response()->json([
+        'logs' => $logs,
+        'resumo' => $resumo,
+    ]);
+}
+
+
+
 
 }
 
