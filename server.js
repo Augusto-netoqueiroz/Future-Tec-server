@@ -1,180 +1,438 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import AsteriskManager from 'asterisk-manager';
-import odbc from 'odbc'; // Importar o pacote ODBC
-import dotenv from 'dotenv'; // Para carregar variáveis do arquivo .env
+import odbc from 'odbc';
+import dotenv from 'dotenv';
 
-// Carregar variáveis de ambiente
-dotenv.config();
+dotenv.config(); // Carregar variáveis de ambiente do arquivo .env
 
-// Criar servidor HTTP
 const httpServer = createServer();
-const httpServerWapp = createServer();  // Novo servidor HTTP para a instância 3080
+const httpServerWapp = createServer();
 
-// Criar servidor Socket.IO com configurações CORS para a porta 3000
 const io = new Server(httpServer, {
     cors: {
-        origin: "http://93.127.212.237:8082", // Substitua pela URL do seu frontend
+        origin: "http://93.127.212.237:8082",
         methods: ['GET', 'POST'],
         allowedHeaders: ['Content-Type'],
-        credentials: false, // Permitir cookies e headers de autenticação
+        credentials: false,
     },
 });
 
-// Criar servidor Socket.IO com configurações CORS para a porta 3080 (nova instância)
 const ioWapp = new Server(httpServerWapp, {
     cors: {
-        origin: "http://93.127.212.237:8082", // Substitua pela URL do seu frontend
+        origin: "http://93.127.212.237:8082",
         methods: ['GET', 'POST'],
         allowedHeaders: ['Content-Type'],
-        credentials: false, // Permitir cookies e headers de autenticação
+        credentials: false,
     },
 });
 
-// Configurar conexão ODBC
-const connectionString = process.env.ODBC_CONNECTION_STRING; // Conexão ODBC definida no .env
-let connection;
+let connection; // Declaração da variável no escopo global
 
-// Conectar ao banco de dados ODBC
+// Maps para rastreamento
+const activeCalls = new Map();
+const loggedHangups = new Set();
+const callIntervals = new Map();
+const agentStatus = new Map();
+const queueStatus = new Map();
+const channelStates = new Map();
+
 async function connectToDB() {
     try {
-        connection = await odbc.connect(connectionString);
+        // Exibindo mensagem de início de conexão
+        console.log("Iniciando conexão com o banco de dados...");
+
+        // Configurações da conexão ODBC
+        const connectionConfig = {
+            connectionString: 'DSN=asterisk-connector', // Nome do DSN configurado no ODBC
+            host: process.env.DB_HOST, // Host do banco de dados
+            port: process.env.DB_PORT, // Porta do banco de dados
+            database: process.env.DB_DATABASE, // Nome do banco de dados
+            user: process.env.DB_USERNAME, // Usuário do banco de dados
+            password: process.env.DB_PASSWORD // Senha do banco de dados
+        };
+
+        // Verificação de saída das configurações (para depuração)
+        console.log("Configuração de conexão:", connectionConfig);
+
+        // Tentativa de conexão ao banco de dados
+        connection = await odbc.connect(connectionConfig);
+
+        // Mensagem de sucesso na conexão
         console.log("Conexão ODBC estabelecida com sucesso!");
+
     } catch (error) {
+        // Exibição de erros durante a conexão
         console.error("Erro ao conectar ao banco de dados ODBC:", error);
     }
 }
 
-// Criar instância do Asterisk Manager Interface (AMI)
+// Chamando a função para testar a conexão
+connectToDB();
+
+// Configuração do AMI
 const ami = new AsteriskManager(5038, 'localhost', 'admin', 'MKsx2377!@', true);
 
-// Mapa para rastrear chamadas ativas
-const activeCalls = new Map();
-const loggedHangups = new Set(); // Rastreamento de chamadas finalizadas para evitar duplicação
-let callIntervals = new Map();  // Map para gerenciar os intervalos de chamadas
+// Função para emitir eventos para todos os clientes
+function emitToAll(eventName, data) {
+    io.emit(eventName, data);
+    ioWapp.emit(eventName, data);
+}
 
-// Capturar eventos do AMI
-ami.on('managerevent', (event) => {
-    // Emitir os logs para o frontend
-    io.emit('new_event', event);
-    ioWapp.emit('new_event', event);  // Emitir para a segunda instância também
 
-    // Quando o ramal inicia uma ligação (ligando)
-    if (event.event === 'Newchannel' && event.privilege === 'call,all' && event.exten !== 's') {
-        const chamador = event.calleridnum;  // Número do chamador
-        const destinatario = event.exten;  // Número ou ramal do destinatário
-        console.log(`status: ligando - Chamador: ${chamador}, Destinatário: ${destinatario}`);
-    }
 
-    // Quando o ramal está tocando
-    if (event.event === 'Newstate' && event.channelstatedesc === 'Ringing') {
-        const chamador = event.calleridnum;  // Número do chamador
-        const destinatario = event.exten;  // Número ou ramal do destinatário
-        console.log(`status: tocando - Chamador: ${chamador}, Ramal: ${destinatario}`);
-    }
+// Função para atualizar status do canal
+function updateChannelState(channel, state) {
+    channelStates.set(channel, state);
+    emitToAll('channel_state_update', { channel, state });
+}
 
-    // Quando a ligação é estabelecida (call answered)
-    if (event.event === 'VarSet' && event.channelstatedesc === 'Up') {
-        const callKey = event.channel; // Identificador único para a chamada
+// Monitoramento de Eventos AMI
+ami.on('managerevent', async (event) => {
+    console.log("Evento recebido do AMI:", event.event, event);
 
-        // Verificar se o destinatário (exten) é válido
-        if (event.exten && event.exten.trim() !== '') {
-            const recipient = event.exten;
+    emitToAll('new_event', event);
 
-            if (!activeCalls.has(callKey)) {
-                const startTime = Date.now();
-                activeCalls.set(callKey, {
-                    startTime,
-                    originator: event.calleridnum || event.channel,
-                    recipient,
-                    isFinished: false
-                });
-
-                console.log(`status: em ligação - Chamador: ${event.calleridnum || event.channel}, Destinatário: ${recipient}`);
-
-                // Atualizar a duração em tempo real a cada segundo
-                const interval = setInterval(() => {
-                    const callData = activeCalls.get(callKey);
-
-                    if (callData && !callData.isFinished) {
-                        const elapsed = ((Date.now() - callData.startTime) / 1000).toFixed(2);
-                        console.log(`status: duração - ${elapsed}s - Chamador: ${callData.originator}, Destinatário: ${callData.recipient}`);
-                    } else {
-                        clearInterval(interval);
-                        callIntervals.delete(callKey);
-                    }
-                }, 1000);
-
-                callIntervals.set(callKey, interval);
-            }
+    try {
+        switch (event.event) {
+            case 'Newchannel':
+                console.log("Novo canal detectado:", event);
+                handleNewChannel(event);
+                break;
+            case 'Newstate':
+                console.log("Novo estado detectado:", event);
+                handleNewState(event);
+                break;
+            case 'Bridge':
+                console.log("Nova ponte detectada:", event);
+                handleBridge(event);
+                break;
+            case 'Hangup':
+                console.log("Desligamento detectado:", event);
+                handleHangup(event);
+                break;
+            case 'AgentLogin':
+                console.log("Login de agente detectado:", event);
+                handleAgentLogin(event);
+                break;
+            case 'AgentLogoff':
+                console.log("Logout de agente detectado:", event);
+                handleAgentLogoff(event);
+                break;
+            case 'QueueMemberStatus':
+                console.log("Status de membro de fila detectado:", event);
+                handleQueueMemberStatus(event);
+                break;
+            case 'Hold':
+                console.log("Chamada em espera detectada:", event);
+                handleHold(event);
+                break;
+            case 'Unhold':
+                console.log("Chamada retirada da espera detectada:", event);
+                handleUnhold(event);
+                break;
+            default:
+                console.log("Evento desconhecido:", event.event);
         }
-    }
-
-    // Quando a ligação é finalizada (Hangup)
-    if ((event.event === 'HangupRequest' || event.event === 'Hangup') && event.channel) {
-        const callKey = event.channel; // Identificador único para a chamada
-
-        // Prevenir logs duplicados
-        if (!loggedHangups.has(callKey)) {
-            loggedHangups.add(callKey);
-
-            if (activeCalls.has(callKey)) {
-                const callData = activeCalls.get(callKey);
-
-                if (callData && !callData.isFinished) {
-                    const duration = ((Date.now() - callData.startTime) / 1000).toFixed(2);
-
-                    console.log(`status: ligação encerrada por - ${event.channel} (Razão: ${event.cause})`);
-                    console.log(`status: duração final - ${duration}s - Chamador: ${callData.originator}, Destinatário: ${callData.recipient}`);
-
-                    // Atualizar a flag isFinished para que o contador pare
-                    callData.isFinished = true;
-
-                    // Limpar o intervalo para a duração da chamada
-                    clearInterval(callIntervals.get(callKey));
-
-                    // Remover a chamada ativa do mapa
-                    activeCalls.delete(callKey);
-                    callIntervals.delete(callKey);  // Remover o intervalo do mapa também
-
-                    console.log(`status: chamada removida do mapa - ${callKey}`);
-                }
-            }
-        }
-    }
-
-    // Caso o ramal que originou a chamada (201) desliga, garantir que o tempo de duração não continue
-    if ((event.event === 'HangupRequest' || event.event === 'Hangup') && event.channel && activeCalls.has(event.channel)) {
-        const callKey = event.channel;
-
-        if (activeCalls.has(callKey)) {
-            const callData = activeCalls.get(callKey);
-            // Se a chamada foi finalizada, mas o tempo está sendo contado erroneamente, a correção seria parar o intervalo.
-            if (callData && !callData.isFinished) {
-                clearInterval(callIntervals.get(callKey)); // Garantir que o intervalo de tempo seja interrompido.
-                activeCalls.delete(callKey); // Remover o registro da chamada ativa.
-                callIntervals.delete(callKey); // Garantir a limpeza do intervalo.
-                console.log(`status: tempo da chamada interrompido para ${callKey}`);
-            }
-        }
+    } catch (error) {
+        console.error("Erro ao processar o evento AMI:", error);
     }
 });
 
-// Lidar com erros de AMI
+// Handlers específicos para cada tipo de evento
+function handleNewChannel(event) {
+    console.log("Processando novo canal:", event);
+
+    if (event.privilege === 'call,all' && event.exten !== 's') {
+        const callData = {
+            channel: event.channel,
+            caller: event.calleridnum,
+            destination: event.exten,
+            startTime: Date.now(),
+            status: 'iniciando'
+        };
+        
+        activeCalls.set(event.channel, callData);
+        updateChannelState(event.channel, 'iniciando');
+        emitToAll('call_started', callData);
+        logAmiEventToDB('call_start', callData);
+    }
+}
+
+function handleNewState(event) {
+    console.log("Processando novo estado:", event);
+
+    if (event.channelstatedesc === 'Ringing') {
+        const callData = {
+            channel: event.channel,
+            caller: event.calleridnum,
+            destination: event.connectedlinenum,
+            status: 'tocando'
+        };
+        
+        updateChannelState(event.channel, 'tocando');
+        emitToAll('call_ringing', callData);
+        logAmiEventToDB('call_ringing', callData);
+    }
+}
+
+function handleBridge(event) {
+    console.log("Processando evento de ponte:", event);
+
+    if (event.bridgestate === 'Link') {
+        const call = activeCalls.get(event.channel1);
+        if (call) {
+            call.status = 'em_conversa';
+            call.bridgeTime = Date.now();
+            
+            updateChannelState(event.channel1, 'em_conversa');
+            emitToAll('call_answered', {
+                channel: event.channel1,
+                caller: call.caller,
+                destination: call.destination
+            });
+
+            startCallDurationTimer(event.channel1);
+        }
+    }
+}
+
+function handleHangup(event) {
+    console.log("Processando desligamento:", event);
+
+    if (!loggedHangups.has(event.channel)) {
+        loggedHangups.add(event.channel);
+        const call = activeCalls.get(event.channel);
+        
+        if (call) {
+            const duration = ((Date.now() - call.startTime) / 1000).toFixed(2);
+            const hangupData = {
+                channel: event.channel,
+                caller: call.caller,
+                destination: call.destination,
+                duration: duration,
+                cause: event.cause
+            };
+
+            stopCallDurationTimer(event.channel);
+            activeCalls.delete(event.channel);
+            updateChannelState(event.channel, 'finalizada');
+            emitToAll('call_ended', hangupData);
+            logAmiEventToDB('call_end', hangupData);
+        }
+    }
+}
+
+function handleAgentLogin(event) {
+    console.log("Processando login de agente:", event);
+
+    const agentData = {
+        agent: event.agent,
+        loginTime: Date.now()
+    };
+    
+    agentStatus.set(event.agent, agentData);
+    emitToAll('agent_login', agentData);
+    logAmiEventToDB('agent_login', agentData);
+}
+
+function handleAgentLogoff(event) {
+    console.log("Processando logout de agente:", event);
+
+    const agentData = agentStatus.get(event.agent);
+    if (agentData) {
+        const duration = ((Date.now() - agentData.loginTime) / 1000).toFixed(2);
+        agentStatus.delete(event.agent);
+        emitToAll('agent_logoff', {
+            agent: event.agent,
+            duration: duration
+        });
+    }
+}
+
+function handleQueueMemberStatus(event) {
+    console.log("Processando status de membro de fila:", event);
+
+    const queueData = {
+        queue: event.queue,
+        member: event.member,
+        status: event.status
+    };
+    
+    queueStatus.set(`${event.queue}-${event.member}`, queueData);
+    emitToAll('queue_member_status', queueData);
+}
+
+function handleHold(event) {
+    console.log("Processando chamada em espera:", event);
+
+    const call = activeCalls.get(event.channel);
+    if (call) {
+        call.status = 'em_espera';
+        updateChannelState(event.channel, 'em_espera');
+        emitToAll('call_hold', {
+            channel: event.channel,
+            caller: call.caller,
+            destination: call.destination
+        });
+    }
+}
+
+function handleUnhold(event) {
+    console.log("Processando chamada retirada da espera:", event);
+
+    const call = activeCalls.get(event.channel);
+    if (call) {
+        call.status = 'em_conversa';
+        updateChannelState(event.channel, 'em_conversa');
+        emitToAll('call_unhold', {
+            channel: event.channel,
+            caller: call.caller,
+            destination: call.destination
+        });
+    }
+}
+
+// Funções de utilidade para timer de chamadas
+function startCallDurationTimer(channel) {
+    console.log("Iniciando temporizador de duração para canal:", channel);
+
+    const interval = setInterval(() => {
+        const call = activeCalls.get(channel);
+        if (call && !call.isFinished) {
+            const duration = ((Date.now() - call.startTime) / 1000).toFixed(2);
+            emitToAll('call_duration_update', {
+                channel: channel,
+                duration: duration,
+                caller: call.caller,
+                destination: call.destination
+            });
+        } else {
+            stopCallDurationTimer(channel);
+        }
+    }, 1000);
+    
+    callIntervals.set(channel, interval);
+}
+
+function stopCallDurationTimer(channel) {
+    console.log("Parando temporizador de duração para canal:", channel);
+
+    const interval = callIntervals.get(channel);
+    if (interval) {
+        clearInterval(interval);
+        callIntervals.delete(channel);
+    }
+}
+
+// Comandos AMI
+function originateCall(extension, context, priority, callerid) {
+    return new Promise((resolve, reject) => {
+        ami.action({
+            action: 'Originate',
+            channel: `SIP/${extension}`,
+            context: context,
+            priority: priority,
+            callerid: callerid
+        }, (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+        });
+    });
+}
+
+
+async function logAmiEventToDB(eventType, eventData) {
+    try {
+        if (!connection) {
+            console.error("Conexão falou na função AMI.");
+            return;
+        }
+
+        console.log("Registrando evento AMI na tabela ami_logs:", eventType, eventData);
+
+        const result = await connection.query(`
+            INSERT INTO ami_logs (
+                event_type, 
+                event_data
+            ) VALUES (?, ?)
+        `, [
+            eventType,
+            JSON.stringify(eventData)
+        ]);
+
+        console.log("Evento AMI registrado com sucesso na tabela ami_logs:", result);
+    } catch (error) {
+        console.error("Erro ao registrar evento AMI na tabela ami_logs:", error);
+    }
+}
+
+async function ensureConnection() {
+    if (!connection || connection.closed) {
+        connection = await odbc.connect(connectionConfig);
+    }
+}
+
+
+async function executeQuery(query, params) {
+    try {
+        await ensureConnection();
+        return await connection.query(query, params);
+    } catch (error) {
+        if (error.odbcErrors.some(e => e.code === 2013)) {
+            console.warn("Conexão perdida, tentando reconectar...");
+            await ensureConnection(); // Tentar reconectar
+            return await connection.query(query, params); // Reexecutar query
+        } else {
+            throw error;
+        }
+    }
+}
+
+// Monitoramento de Eventos AMI
+ami.on('managerevent', async (event) => {
+    console.log("Evento recebido do AMI:", event.event, event);
+
+    emitToAll('new_event', event);
+    await logAmiEventToDB(event.event, event); // Logando o evento na tabela ami_logs
+
+    try {
+        switch (event.event) {
+            // [Restante do código de manipulação de eventos permanece inalterado]
+        }
+    } catch (error) {
+        console.error("Erro ao processar o evento AMI:", error);
+    }
+});
+
+
+
+// Conexão AMI
+ami.on('connected', () => {
+    console.log('Conexão com AMI estabelecida com sucesso!');
+});
+
 ami.on('error', (err) => {
     console.error('Erro na conexão AMI:', err);
+    emitToAll('ami_error', { error: err.message });
 });
 
-// Enviar um comando Ping para verificar se a conexão está funcionando
-ami.action({
-    action: 'Ping'
-}, (err, res) => {
-    if (err) {
-        console.log('Erro ao enviar Ping:', err);
-    } else {
-        console.log('Resposta do Asterisk:', res);
-    }
-});
+// Verificando status da conexão AMI periodicamente
+setInterval(() => {
+    console.log("Verificando a conexão com a AMI...");
+
+    ami.action({
+        action: 'Ping'
+    }, (err, res) => {
+        if (err) {
+            console.error('Erro no ping AMI:', err);
+            emitToAll('ami_status', { status: 'disconnected' });
+        } else {
+            console.log('Ping bem-sucedido:', res);
+            emitToAll('ami_status', { status: 'connected' });
+        }
+    });
+}, 30000);
 
 // Iniciar o servidor Socket.IO na porta 3000
 httpServer.listen(3000, '0.0.0.0', () => {

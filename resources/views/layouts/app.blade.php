@@ -36,12 +36,7 @@
                                         <span class="menu-text">Home</span>
                                     </a>
                                 </li>
-                                <li class="menu-item" aria-haspopup="true" @if(auth()->check() && auth()->user()->cargo == 'Operador') style="display: none;" @endif>
-                                    <a href="{{ route('dashboard') }}" class="menu-link">
-                                        <i class="menu-icon fas fa-chart-line"></i>
-                                        <span class="menu-text">Dashboard</span>
-                                    </a>
-                                </li>
+                                
                                 <li class="menu-item" aria-haspopup="true" @if(auth()->check() && auth()->user()->cargo == 'Operador') style="display: none;" @endif>
                                     <a href="{{ route('call-events') }}" class="menu-link">
                                         <i class="menu-icon fas fa-tachometer-alt"></i>

@@ -405,7 +405,7 @@ License: For each use you must have a valid license purchased only from above li
 										<!--begin:Menu item-->
 										<div class="menu-item">
 											<!--begin:Menu link-->
-											<a class="menu-link" href="{{ route('dashboard') }}">
+											<a class="menu-link" href="{{ route('dashboard.index') }}">
 												<span class="menu-bullet">
 													<span class="bullet bullet-dot"></span>
 												</span>
@@ -948,9 +948,12 @@ License: For each use you must have a valid license purchased only from above li
 
 		<!-- JS: Modal e Contador Integrados -->
 	<script>
-    window.userId = {{ Auth::user()->id }};
-	</script>
-
+    @if(Auth::check())
+        window.userId = {{ Auth::user()->id }};
+    @else
+        window.location.href = "{{ route('login') }}";  // Redireciona para a página de login
+    @endif
+    </script>
 
 	</body>
 	<!--end::Body-->

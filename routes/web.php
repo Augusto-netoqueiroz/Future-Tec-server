@@ -152,8 +152,7 @@ Route::get('/teste', function () {
     return 'Teste';
 });
 
-//DASHBOARD
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
 //Pausas
 Route::resource('pauses', PauseController::class);
@@ -217,6 +216,9 @@ Route::post('/finish', [PauseController::class, 'finish'])->name('finish');
 //Relatório de pausas
 Route::get('/relatorio-pausas', [PauseController::class, 'relatorio'])->name('relatorio.pausas');
 Route::post('/relatorio-pausas', [PauseController::class, 'filtrarRelatorio'])->name('relatorio.pausas.filtrar');
+
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
 
 
