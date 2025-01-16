@@ -224,6 +224,17 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 
 
+Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store');
+
+Route::get('/campanhas', [CampaignController::class, 'index'])->name('campaign.index');
+Route::get('/campanhas/criar', [CampaignController::class, 'create'])->name('campaign.create');
+Route::get('/campaign/{id}', [CampaignController::class, 'show'])->name('campaign.show');
+Route::get('/campaign/{id}/delete', [CampaignController::class, 'delete'])->name('campaign.delete');
+
+Route::post('/campaign/{id}/start', [CampaignController::class, 'startCampaign']);
+
+
+
 
 
 

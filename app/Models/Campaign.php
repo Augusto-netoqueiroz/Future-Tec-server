@@ -9,5 +9,11 @@ class Campaign extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = [
+        'name',
+        'start_date',
+        'end_date',
+        'audio_file',
+        'status',
+    ];
 }

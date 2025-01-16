@@ -1,0 +1,122 @@
+2025-01-16 12:18:16 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:18:16 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:18:16 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:18:46 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:18:46 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:18:46 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:20:02 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:20:02 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:20:02 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:22:30 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:22:30 - Contatos encontrados para campanha ID 7: 2
+2025-01-16 12:22:30 - Iniciando chamada para o número: 61981503910
+2025-01-16 12:22:30 - Tentando conectar ao AMI para iniciar a chamada para 61981503910
+2025-01-16 12:22:30 - Conexão com o AMI estabelecida, enviando comandos
+2025-01-16 12:22:30 - Chamada para o número 61981503910 enviada com sucesso.
+2025-01-16 12:22:30 - Atualizando status do contato ID 9 para in_progress
+2025-01-16 12:22:30 - Status do contato ID 9 atualizado para in_progress
+2025-01-16 12:22:30 - Iniciando chamada para o número: 61996414159
+2025-01-16 12:22:30 - Tentando conectar ao AMI para iniciar a chamada para 61996414159
+2025-01-16 12:22:30 - Conexão com o AMI estabelecida, enviando comandos
+2025-01-16 12:22:30 - Chamada para o número 61996414159 enviada com sucesso.
+2025-01-16 12:22:30 - Atualizando status do contato ID 10 para in_progress
+2025-01-16 12:22:30 - Status do contato ID 10 atualizado para in_progress
+2025-01-16 12:22:30 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:23:10 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:23:10 - Contatos encontrados para campanha ID 7: 2
+2025-01-16 12:23:10 - Iniciando chamada para o número: 61981503910
+2025-01-16 12:23:10 - Tentando conectar ao AMI para iniciar a chamada para 61981503910
+2025-01-16 12:23:10 - Conexão com o AMI estabelecida, enviando comandos
+2025-01-16 12:23:10 - Chamada para o número 61981503910 enviada com sucesso.
+2025-01-16 12:23:10 - Atualizando status do contato ID 9 para in_progress
+2025-01-16 12:23:10 - Status do contato ID 9 atualizado para in_progress
+2025-01-16 12:23:10 - Iniciando chamada para o número: 61996414159
+2025-01-16 12:23:10 - Tentando conectar ao AMI para iniciar a chamada para 61996414159
+2025-01-16 12:23:10 - Conexão com o AMI estabelecida, enviando comandos
+2025-01-16 12:23:10 - Chamada para o número 61996414159 enviada com sucesso.
+2025-01-16 12:23:10 - Atualizando status do contato ID 10 para in_progress
+2025-01-16 12:23:10 - Status do contato ID 10 atualizado para in_progress
+2025-01-16 12:23:10 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:26:43 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:26:43 - Contatos encontrados para campanha ID 7: 2
+2025-01-16 12:26:43 - Iniciando chamada para o número: 61981503910
+2025-01-16 12:26:43 - Tentando conectar ao AMI para iniciar a chamada para o número 61981503910...
+2025-01-16 12:26:43 - Conexão com AMI estabelecida.
+2025-01-16 12:26:43 - Login no AMI enviado.
+2025-01-16 12:26:43 - Comando de Originate enviado: SIP/61981503910
+2025-01-16 12:26:43 - Chamada solicitada para o número 61981503910, status 'in_progress'
+2025-01-16 12:26:43 - Atualizando status do contato ID 9 para in_progress.
+2025-01-16 12:26:43 - Status do contato ID 9 atualizado para in_progress.
+2025-01-16 12:26:43 - Iniciando chamada para o número: 61996414159
+2025-01-16 12:26:43 - Tentando conectar ao AMI para iniciar a chamada para o número 61996414159...
+2025-01-16 12:26:43 - Conexão com AMI estabelecida.
+2025-01-16 12:26:43 - Login no AMI enviado.
+2025-01-16 12:26:43 - Comando de Originate enviado: SIP/61996414159
+2025-01-16 12:26:43 - Chamada solicitada para o número 61996414159, status 'in_progress'
+2025-01-16 12:26:43 - Atualizando status do contato ID 10 para in_progress.
+2025-01-16 12:26:43 - Status do contato ID 10 atualizado para in_progress.
+2025-01-16 12:26:43 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:29:04 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:29:04 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:29:04 - Nenhum contato encontrado para a campanha ID 7.
+2025-01-16 12:29:30 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:29:30 - Contatos encontrados para campanha ID 7: 2
+2025-01-16 12:29:30 - Iniciando chamada para o número: 61981503910
+2025-01-16 12:29:30 - Tentando conectar ao AMI para iniciar a chamada para o número 61981503910...
+2025-01-16 12:29:30 - Conexão com AMI estabelecida.
+2025-01-16 12:29:30 - Login no AMI enviado.
+2025-01-16 12:29:30 - Comando de Originate enviado: Channel=SIP/61981503910@fonetalk, Context=fotalk, Exten=s
+2025-01-16 12:29:30 - Chamada solicitada para o número 61981503910, status 'in_progress'
+2025-01-16 12:29:30 - Atualizando status do contato ID 9 para in_progress.
+2025-01-16 12:29:30 - Status do contato ID 9 atualizado para in_progress.
+2025-01-16 12:29:30 - Iniciando chamada para o número: 61996414159
+2025-01-16 12:29:30 - Tentando conectar ao AMI para iniciar a chamada para o número 61996414159...
+2025-01-16 12:29:30 - Conexão com AMI estabelecida.
+2025-01-16 12:29:30 - Login no AMI enviado.
+2025-01-16 12:29:30 - Comando de Originate enviado: Channel=SIP/61996414159@fonetalk, Context=fotalk, Exten=s
+2025-01-16 12:29:30 - Chamada solicitada para o número 61996414159, status 'in_progress'
+2025-01-16 12:29:30 - Atualizando status do contato ID 10 para in_progress.
+2025-01-16 12:29:30 - Status do contato ID 10 atualizado para in_progress.
+2025-01-16 12:29:30 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:39:55 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:39:55 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:39:55 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:41:09 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:41:09 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:41:09 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:41:48 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:41:48 - Contatos encontrados para campanha ID 7: 2
+2025-01-16 12:41:48 - Iniciando chamada para o número: 61981503910
+2025-01-16 12:41:48 - Tentando conectar ao AMI para iniciar a chamada para o número 61981503910...
+2025-01-16 12:41:48 - Status do contato ID 9 atualizado para in_progress.
+2025-01-16 12:41:48 - Chamada para o número 61981503910 enviada com sucesso.
+2025-01-16 12:41:48 - Iniciando chamada para o número: 61996414159
+2025-01-16 12:41:48 - Tentando conectar ao AMI para iniciar a chamada para o número 61996414159...
+2025-01-16 12:41:48 - Status do contato ID 10 atualizado para in_progress.
+2025-01-16 12:41:48 - Chamada para o número 61996414159 enviada com sucesso.
+2025-01-16 12:41:48 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 12:49:24 - Iniciando chamadas para campanha ID: 7
+2025-01-16 12:49:24 - Contatos encontrados para campanha ID 7: 0
+2025-01-16 12:49:24 - Finalizado o processamento dos contatos para a campanha ID: 7
+2025-01-16 13:41:24 - Buscando campanha ID: 7...
+2025-01-16 13:41:24 - Nenhuma campanha ativa encontrada com ID: 7
+2025-01-16 13:43:47 - Buscando campanha ID: 7...
+2025-01-16 13:43:47 - Nenhuma campanha ativa encontrada com ID: 7
+2025-01-16 13:44:38 - Buscando campanha ID: 7...
+2025-01-16 13:44:38 - Nenhuma campanha ativa encontrada com ID: 7
+2025-01-16 13:45:04 - Buscando campanha ID: 7...
+2025-01-16 13:45:04 - Nenhuma campanha ativa encontrada com ID: 7
+2025-01-16 13:45:50 - Buscando campanha ID: 7...
+2025-01-16 13:45:50 - Iniciando chamadas para campanha: Duplicação 2
+2025-01-16 13:45:50 - Total de contatos para ligar: 2
+2025-01-16 13:45:50 - Ligando para: 61981503910
+2025-01-16 13:45:50 - Conectando ao AMI para ligar para 61981503910...
+2025-01-16 13:45:50 - Resposta do AMI para 61981503910: Asterisk Call Manager/7.0.1
+Response: Success
+2025-01-16 13:45:50 - Status do contato ID 9 atualizado para in_progress.
+2025-01-16 13:45:50 - Ligando para: 61996414159
+2025-01-16 13:45:50 - Conectando ao AMI para ligar para 61996414159...
+2025-01-16 13:45:50 - Resposta do AMI para 61996414159: Asterisk Call Manager/7.0.1
+Response: Success
+2025-01-16 13:45:50 - Status do contato ID 10 atualizado para in_progress.
+2025-01-16 13:45:50 - Finalizado o processamento da campanha ID: 7
