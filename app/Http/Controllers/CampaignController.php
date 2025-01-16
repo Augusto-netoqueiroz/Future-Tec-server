@@ -164,69 +164,76 @@ class CampaignController extends Controller
 
 
     public function startCampaign($campaignId)
-    {
-        // Conexão com o Asterisk AMI
-        $host = "127.0.0.1";
-        $port = 5038;
-        $username = "admin";
-        $password = "MKsx2377!@";
-        $context = "rotapentagono";
-        $priority = 1;
-    
-        try {
-            // Conectar ao AMI
-            $socket = fsockopen($host, $port, $errno, $errstr, 10);
-            if (!$socket) {
-                throw new \Exception("Erro ao conectar ao AMI: $errstr ($errno)");
-            }
-    
-            // Login no AMI
-            fputs($socket, "Action: Login\r\nUsername: $username\r\nSecret: $password\r\nEvents: off\r\n\r\n");
-    
-            // Buscar contatos da campanha
-            $contacts = CampaignContact::where('campaign_id', $campaignId)
-                                       ->where('status', 'pending')
-                                       ->get();
-    
-            if ($contacts->isEmpty()) {
-                return response()->json(['message' => 'Nenhum contato pendente.'], 404);
-            }
-    
-            foreach ($contacts as $contact) {
-                $callee = $contact->phone_number;
-    
-                // Comando Originate para cada número
-                $originate = "Action: Originate\r\n" .
-                             "Channel: SIP/Pentagono/$callee\r\n" .
-                             "Exten: $callee\r\n" .
-                             "Context: $context\r\n" .
-                             "Priority: $priority\r\n" .
-                             "Callerid: \r\n" .
-                             "Timeout: 30000\r\n" .
-                             "Async: yes\r\n\r\n";
-    
-                fputs($socket, $originate);
-    
-                // Atualiza status no banco
-                $contact->update(['status' => 'in_progress']);
-    
-                usleep(500000); // Pequeno delay entre chamadas
-            }
-    
-            // Logout do AMI e fechar conexão
-            fputs($socket, "Action: Logoff\r\n\r\n");
-            fclose($socket);
-    
-            return response()->json(['message' => 'Campanha iniciada!']);
-    
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+{
+    // Conexão com o Asterisk AMI
+    $host = "127.0.0.1";
+    $port = 5038;
+    $username = "admin";
+    $password = "MKsx2377!@";
+    $context = "testefone";
+    $priority = 1;
+
+    try {
+        // Conectar ao AMI
+        $socket = fsockopen($host, $port, $errno, $errstr, 10);
+        if (!$socket) {
+            throw new \Exception("Erro ao conectar ao AMI: $errstr ($errno)");
         }
+
+        // Login no AMI
+        fputs($socket, "Action: Login\r\nUsername: $username\r\nSecret: $password\r\nEvents: off\r\n\r\n");
+
+        // Buscar contatos e áudio da campanha
+        $campaign = Campaign::find($campaignId);
+        if (!$campaign) {
+            return response()->json(['message' => 'Campanha não encontrada.'], 404);
+        }
+
+        $audioFileName = $campaign->audio_file; // Nome do arquivo de áudio
+        $contacts = CampaignContact::where('campaign_id', $campaignId)
+                                   ->where('status', 'pending')
+                                   ->get();
+
+        if ($contacts->isEmpty()) {
+            return response()->json(['message' => 'Nenhum contato pendente.'], 404);
+        }
+
+        foreach ($contacts as $contact) {
+            $callee = $contact->phone_number;
+        
+            // Extrair o nome do arquivo de áudio sem a extensão
+            $audioFileNameWithoutExtension = pathinfo($campaign->audio_file, PATHINFO_FILENAME);
+            $audioFilePath = "custom/" . $audioFileNameWithoutExtension; // Prefixa com "custom/"
+        
+            // Comando Originate para cada número
+            $originate = "Action: Originate\r\n" .
+                         "Channel: SIP/fonetalk/$callee\r\n" .
+                         "Exten: $callee\r\n" .
+                         "Context: $context\r\n" .
+                         "Priority: $priority\r\n" .
+                         "Callerid: \r\n" .
+                         "Timeout: 30000\r\n" .
+                         "Async: yes\r\n" .
+                         "Variable: AUDIO_FILE=$audioFilePath\r\n\r\n";
+        
+            fputs($socket, $originate);
+        
+            // Atualiza status no banco
+            $contact->update(['status' => 'in_progress']);
+        
+            usleep(500000); // Pequeno delay entre chamadas
+        }
+
+        // Logout do AMI e fechar conexão
+        fputs($socket, "Action: Logoff\r\n\r\n");
+        fclose($socket);
+
+        return response()->json(['message' => 'Campanha iniciada!']);
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
-    
-
-
-
+}
 
 
 
