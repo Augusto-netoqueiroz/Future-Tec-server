@@ -22,82 +22,126 @@ class CampaignController extends Controller
         return view('campaign.index', compact('campaigns'));
     }
 
-    public function create()
+    public function criar()
     {
-        Log::info('Campaign create method called.');
-        return view('campaign.create');
+        
+        Log::info('Função criar foi chamada.', ['url' => request()->url(), 'method' => request()->method()]);
+        return view('campaign.criar');
     }
     
 
-public function store(Request $request)
+    public function store(Request $request)
 {
-    Log::info('Iniciando o processo de criação de campanha', ['input_data' => $request->all()]);
-
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'context' => 'required|string',
-        'extension' => 'required|string',
-        'priority' => 'required|integer',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after:start_date',
-        'numbers_file' => 'required|file|mimes:csv,txt',
-        'audio_file' => 'required|file|mimes:wav,mp3',
-    ]);
-
-    Log::info('Dados validados com sucesso', ['validated_data' => $validated]);
+    Log::info('Função store foi chamada.', ['url' => request()->url(), 'method' => request()->method()]);
 
     try {
-        // Convertendo as datas para o formato adequado para o banco de dados
+        // Validação dos dados do formulário
+        Log::info('Iniciando validação dos dados...');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'context' => 'required|string',
+            'extension' => 'required|string',
+            'priority' => 'required|integer',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'numbers_file' => 'required|file|mimes:csv,txt',
+            'audio_file' => 'required|file|mimes:wav,mp3',
+        ]);
+
+        Log::info('Validação concluída com sucesso.', ['validated_data' => $validated]);
+
+        // Processando as datas
+        Log::info('Processando as datas...');
         $startDate = Carbon::parse($validated['start_date'])->format('Y-m-d H:i:s');
         $endDate = Carbon::parse($validated['end_date'])->format('Y-m-d H:i:s');
-        
-        Log::info('Datas convertidas para o formato correto', ['start_date' => $startDate, 'end_date' => $endDate]);
 
-        // Salvar os arquivos no storage local
+        // Movendo o arquivo de áudio para o diretório do Asterisk
+        $asteriskPath = '/var/lib/asterisk/sounds/custom/';
+        $audioFile = $request->file('audio_file');
+        $audioFileName = time() . '_' . $audioFile->getClientOriginalName();
+
+        Log::info('Movendo o arquivo de áudio...', [
+            'file_name' => $audioFileName,
+            'destination' => $asteriskPath,
+        ]);
+
+        if (!$audioFile->move($asteriskPath, $audioFileName)) {
+            return redirect()->back()->with('error', 'Erro ao salvar o áudio.');
+        }
+
+        // Processando o arquivo de números
+        Log::info('Processando o arquivo de números...');
         $numbersPath = $request->file('numbers_file')->store('uploads/numbers');
-        $audioPath = $request->file('audio_file')->store('uploads/audio');
+        $numbers = array_map('str_getcsv', file(Storage::path($numbersPath)));
 
-        Log::info('Arquivos armazenados com sucesso', ['numbers_file' => basename($numbersPath), 'audio_file' => basename($audioPath)]);
+        $validNumbers = [];
+        $invalidNumbers = [];
 
-        // Criar a campanha
+        foreach ($numbers as $line) {
+            $phoneNumber = isset($line[0]) ? preg_replace('/[^0-9]/', '', $line[0]) : null; // Remove caracteres não numéricos
+            $name = isset($line[1]) ? trim($line[1]) : null;
+
+            if (!empty($phoneNumber) && strlen($phoneNumber) <= 15) {
+                $validNumbers[] = [
+                    'campaign_id' => null, // Campanha será criada posteriormente
+                    'phone_number' => $phoneNumber,
+                    'status' => 'pending',
+                    'name' => $name,
+                ];
+            } else {
+                $invalidNumbers[] = [
+                    'phone_number' => $line[0] ?? 'N/A',
+                    'reason' => empty($phoneNumber) ? 'Número vazio ou inválido' : 'Excede 15 caracteres',
+                ];
+            }
+        }
+
+        Log::info('Números processados.', [
+            'valid_numbers_count' => count($validNumbers),
+            'invalid_numbers_count' => count($invalidNumbers),
+        ]);
+
+        // Criando a campanha
+        Log::info('Criando a campanha...');
         $campaign = Campaign::create([
             'name' => $validated['name'],
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'audio_file' => basename($audioPath),
+            'audio_file' => $audioFileName,
             'status' => 'pending',
         ]);
 
-        Log::info('Campanha criada com sucesso', ['campaign_id' => $campaign->id]);
+        // Salvando os números válidos
+        foreach ($validNumbers as &$validNumber) {
+            $validNumber['campaign_id'] = $campaign->id;
+            CampaignContact::create($validNumber);
+        }
 
-
-// Processar os números do arquivo e salvar na tabela campaign_contacts
-        $numbers = array_map('str_getcsv', file(Storage::path($numbersPath)));
-
-        foreach ($numbers as $number) {
-            // Salvando o número na tabela campaign_contacts
-            CampaignContact::create([
-                'campaign_id' => $campaign->id,
-                'phone_number' => trim($number[0]), // Considerando que o número está na primeira coluna
-                'status' => 'pending',
-                'name' => isset($number[1]) ? trim($number[1]) : null, // Adicionando nome, se presente
+        // Log dos números inválidos (se houver)
+        if (!empty($invalidNumbers)) {
+            Log::warning('⚠️ Números inválidos encontrados.', [
+                'invalid_numbers' => $invalidNumbers,
+                'total_invalid' => count($invalidNumbers),
             ]);
         }
 
-        Log::info('Números adicionados à campanha', ['numbers_count' => count($numbers)]);
+        // Adicionando números inválidos na sessão para exibição
+        session()->flash('invalid_numbers', $invalidNumbers);
 
-
-        
-
+        Log::info('Campanha criada com sucesso!', ['campaign_id' => $campaign->id]);
 
         return redirect()->route('campaign.index')->with('success', 'Campanha criada com sucesso!');
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // Erros de validação
+        Log::error('Erros de validação encontrados.', ['errors' => $e->errors()]);
+        return redirect()->back()->withErrors($e->errors())->withInput();
     } catch (\Exception $e) {
-        Log::error('Erro ao criar a campanha', ['error_message' => $e->getMessage()]);
+        // Erros gerais
+        Log::error('Erro ao criar a campanha.', ['error_message' => $e->getMessage()]);
         return redirect()->back()->with('error', 'Erro ao criar a campanha: ' . $e->getMessage());
     }
 }
 
-    
 
     public function show($id)
     {

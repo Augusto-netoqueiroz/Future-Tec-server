@@ -139,18 +139,6 @@ Route::prefix('troncos')->name('troncos.')->group(function () {
 
 
 
-// Campanhas
-Route::prefix('campaigns')->name('campaigns.')->group(function () {
-    Route::get('/', [CampaignController::class, 'index'])->name('index');
-    Route::get('create', [CampaignController::class, 'create'])->name('create');
-    Route::post('/', [CampaignController::class, 'store'])->name('store');
-    Route::get('{id}/upload', [CampaignController::class, 'uploadContacts'])->name('uploadContacts');
-    Route::post('{id}/upload', [CampaignController::class, 'storeContacts'])->name('storeContacts');
-});
-
-Route::get('/teste', function () {
-    return 'Teste';
-});
 
 
 
@@ -224,10 +212,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 
 
-Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store');
+Route::post('/campanhas/store', [CampaignController::class, 'store'])->name('campaign.store');
 
 Route::get('/campanhas', [CampaignController::class, 'index'])->name('campaign.index');
-Route::get('/campanhas/criar', [CampaignController::class, 'create'])->name('campaign.create');
+Route::get('/campanhas/criar', [CampaignController::class, 'criar'])->name('campaign.criar');
 Route::get('/campaign/{id}', [CampaignController::class, 'show'])->name('campaign.show');
 Route::get('/campaign/{id}/delete', [CampaignController::class, 'delete'])->name('campaign.delete');
 
