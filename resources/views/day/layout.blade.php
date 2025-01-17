@@ -515,6 +515,37 @@ License: For each use you must have a valid license purchased only from above li
 
 
 
+								<!-- Início do Menu Campanhas -->
+								<div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+									<!-- Título do Menu -->
+									<span class="menu-link">
+										<span class="menu-icon">
+											<!-- Ícone do Menu -->
+											<i class="ki-duotone ki-gear">
+											<span class="path1"></span>
+											<span class="path2"></span>
+											</i>
+										</span>
+										<span class="menu-title">Campanhas</span>
+										<span class="menu-arrow"></span>
+									</span>
+
+									<!-- Opções do Menu -->
+									<div class="menu-sub menu-sub-accordion">
+										<!--begin:Menu link-->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('campaign.index') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Campanhas</span>
+											</a>
+										</div>
+									</div>
+								</div>
+								<!-- Fim do Menu Campanhas -->		
+							
+
 								<!-- Início do Menu Relatórios -->
 								<div data-kt-menu-trigger="click" class="menu-item menu-accordion">
 									<!-- Título do Menu -->
