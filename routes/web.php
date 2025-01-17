@@ -221,6 +221,8 @@ Route::get('/campaign/{id}/delete', [CampaignController::class, 'delete'])->name
 
 Route::post('/campaign/{id}/start', [CampaignController::class, 'startCampaign']);
 
+Route::post('/campaign/{campaignId}/stop', [CampaignController::class, 'stopCampaign'])->name('campaign.stop');
+
 
 
 

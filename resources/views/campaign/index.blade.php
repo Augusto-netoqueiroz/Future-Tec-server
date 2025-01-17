@@ -1,102 +1,139 @@
 @extends('day.layout')
 
-
 @section('content')
 
 <div class="container mt-5">
-        <h1>Campanhas Criadas</h1>
+    <h1>Campanhas Criadas</h1>
 
-        @if (session('success'))
-            <div class="alert alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
 
-        @if (session('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-        @endif
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
 
-        <table class="table table-striped mt-3">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nome</th>
-                    <th>Data Início</th>
-                    <th>Data Fim</th>
-                    <th>Áudio</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
+    <table class="table table-striped table-hover align-middle mt-3">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Data Início</th>
+                <th>Data Fim</th>
+                <th>Áudio</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
             <a href="{{ route('campaign.criar') }}" class="btn btn-primary mt-3">Criar Nova Campanha</a>
-                @foreach ($campaigns as $campaign)
-                    <tr>
-                        <td>{{ $campaign->id }}</td>
-                        <td>{{ $campaign->name }}</td>
-                        <td>{{ $campaign->start_date }}</td>
-                        <td>{{ $campaign->end_date }}</td>
-                        <td>{{ $campaign->audio_file }}</td>
-                        <td>
-                            @if ($campaign->status == 'pending')
-                                <span class="badge bg-warning">Pendente</span>
-                            @elseif ($campaign->status == 'in_progress')
-                                <span class="badge bg-primary">Em Progresso</span>
-                            @else
-                                <span class="badge bg-success">Concluída</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if ($campaign->status == 'pending')
+            @foreach ($campaigns as $campaign)
+                <tr>
+                    <td>{{ $campaign->id }}</td>
+                    <td>{{ $campaign->name }}</td>
+                    <td>{{ $campaign->start_date }}</td>
+                    <td>{{ $campaign->end_date }}</td>
+                    <td>{{ $campaign->audio_file }}</td>
+                    <td>
+                        @if ($campaign->status == 'pending')
+                            <span class="badge bg-warning">Pendente</span>
+                        @elseif ($campaign->status == 'in_progress')
+                            <span class="badge bg-primary">Em Progresso</span>
+                        @elseif ($campaign->status == 'stopped')
+                            <span class="badge bg-secondary">Parada</span>
+                        @else
+                            <span class="badge bg-success">Concluída</span>
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        <!-- Botões de ação com base no status -->
+                        <div class="d-flex justify-content-center gap-2">
+                        @if ($campaign->status == 'pending' || $campaign->status == 'stopped')
                             <button class="btn btn-sm btn-success start-campaign" data-id="{{ $campaign->id }}">Iniciar</button>
-                            @endif
-
-                            <a href="{{ route('campaign.show', $campaign->id) }}" class="btn btn-sm btn-info">Ver</a>
-                            <a href="{{ route('campaign.delete', $campaign->id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta campanha?')">Excluir</a>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+                        @elseif ($campaign->status == 'in_progress')
+                            <button class="btn btn-sm btn-danger stop-campaign" data-id="{{ $campaign->id }}">Parar</button>
+                        @endif
+                        <a href="{{ route('campaign.show', $campaign->id) }}" class="btn btn-sm btn-info">Ver</a>
+                        <a href="{{ route('campaign.delete', $campaign->id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta campanha?')">Excluir</a>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
     
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll(".start-campaign").forEach(button => {
-            button.addEventListener("click", function() {
-                let campaignId = this.getAttribute("data-id");
+    <!-- Paginação -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+            <span>Exibindo {{ $campaigns->count() }} de {{ $campaigns->total() }} registros</span>
+        </div>
+        <div>
+            {{ $campaigns->appends(request()->query())->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+</div>
 
-                if (!confirm("Tem certeza que deseja iniciar esta campanha?")) {
-                    return;
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".start-campaign").forEach(button => {
+        button.addEventListener("click", function() {
+            let campaignId = this.getAttribute("data-id");
+
+            if (!confirm("Tem certeza que deseja iniciar esta campanha?")) {
+                return;
+            }
+
+            fetch(`/campaign/${campaignId}/start`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
                 }
-
-                fetch(`/campaign/${campaignId}/start`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.message);
-                    location.reload(); // Atualiza a página para mudar o status da campanha
-                })
-                .catch(error => {
-                    alert("Erro ao iniciar a campanha!");
-                    console.error(error);
-                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); // Atualiza a página
+            })
+            .catch(error => {
+                alert("Erro ao iniciar a campanha!");
+                console.error(error);
             });
         });
     });
+
+    document.querySelectorAll(".stop-campaign").forEach(button => {
+        button.addEventListener("click", function() {
+            let campaignId = this.getAttribute("data-id");
+
+            if (!confirm("Tem certeza que deseja parar esta campanha?")) {
+                return;
+            }
+
+            fetch(`/campaign/${campaignId}/stop`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); // Atualiza a página
+            })
+            .catch(error => {
+                alert("Erro ao parar a campanha!");
+                console.error(error);
+            });
+        });
+    });
+});
 </script>
 
-    
-    
-    @endsection
+@endsection
