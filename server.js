@@ -342,52 +342,7 @@ function originateCall(extension, context, priority, callerid) {
 }
 
 
-async function logAmiEventToDB(eventType, eventData) {
-    try {
-        if (!connection) {
-            console.error("Conexão falou na função AMI.");
-            return;
-        }
 
-        console.log("Registrando evento AMI na tabela ami_logs:", eventType, eventData);
-
-        const result = await connection.query(`
-            INSERT INTO ami_logs (
-                event_type, 
-                event_data
-            ) VALUES (?, ?)
-        `, [
-            eventType,
-            JSON.stringify(eventData)
-        ]);
-
-        console.log("Evento AMI registrado com sucesso na tabela ami_logs:", result);
-    } catch (error) {
-        console.error("Erro ao registrar evento AMI na tabela ami_logs:", error);
-    }
-}
-
-async function ensureConnection() {
-    if (!connection || connection.closed) {
-        connection = await odbc.connect(connectionConfig);
-    }
-}
-
-
-async function executeQuery(query, params) {
-    try {
-        await ensureConnection();
-        return await connection.query(query, params);
-    } catch (error) {
-        if (error.odbcErrors.some(e => e.code === 2013)) {
-            console.warn("Conexão perdida, tentando reconectar...");
-            await ensureConnection(); // Tentar reconectar
-            return await connection.query(query, params); // Reexecutar query
-        } else {
-            throw error;
-        }
-    }
-}
 
 // Monitoramento de Eventos AMI
 ami.on('managerevent', async (event) => {

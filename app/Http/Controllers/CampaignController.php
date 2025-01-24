@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Campaign;
 use App\Models\CampaignContact;
 use Carbon\Carbon;
+use App\Services\AmiService;
 
 
 class CampaignController extends Controller
@@ -22,6 +23,25 @@ class CampaignController extends Controller
         Log::info('Campaigns retrieved: ', ['count' => $campaigns->count()]);
         return view('campaign.index', compact('campaigns'));
     }
+
+
+    public function report()
+    {
+        $reportData = DB::table('campaigns')
+            ->select('campaigns.id', 'campaigns.name', 'campaigns.status', 'campaigns.start_date', 'campaigns.end_date',
+                DB::raw('COUNT(campaign_contacts.id) as total_contacts'),
+                DB::raw('SUM(CASE WHEN campaign_contacts.status = "completed" THEN 1 ELSE 0 END) as completed_contacts'),
+                DB::raw('SUM(CASE WHEN campaign_contacts.status = "pending" THEN 1 ELSE 0 END) as pending_contacts'))
+            ->leftJoin('campaign_contacts', 'campaigns.id', '=', 'campaign_contacts.campaign_id')
+            ->groupBy('campaigns.id', 'campaigns.name', 'campaigns.status', 'campaigns.start_date', 'campaigns.end_date')
+            ->orderBy('campaigns.start_date', 'desc')
+            ->get();
+
+        return view('campaign.report', compact('reportData'));
+    }
+
+
+
 
     public function criar()
     {
@@ -161,58 +181,86 @@ class CampaignController extends Controller
         return redirect()->route('campaign.index')->with('success', 'Campanha excluída com sucesso!');
     }
 
-
-
-
     public function startCampaign($campaignId)
-    {
-        // Conexão com o Asterisk AMI
-        $host = "127.0.0.1";
-        $port = 5038;
-        $username = "admin";
-        $password = "MKsx2377!@";
-        $context = "testefone";
-        $priority = 1;
-    
-        try {
-            // Buscar campanha no banco
-            $campaign = Campaign::find($campaignId);
-    
-            if (!$campaign) {
-                return response()->json(['message' => 'Campanha não encontrada.'], 404);
-            }
-    
-            // Verificar horários permitidos
-            $currentDateTime = Carbon::now();
-            if ($currentDateTime->lt(Carbon::parse($campaign->start_date)) || $currentDateTime->gt(Carbon::parse($campaign->end_date))) {
-                return response()->json(['message' => 'Campanha não pode ser iniciada fora do horário configurado.'], 403);
-            }
-    
-            // Atualizar status para "in_progress"
-            $campaign->update(['status' => 'in_progress']);
-    
-            // Conectar ao Asterisk AMI
-            $socket = fsockopen($host, $port, $errno, $errstr, 10);
-            if (!$socket) {
-                throw new \Exception("Erro ao conectar ao AMI: $errstr ($errno)");
-            }
-    
-            fputs($socket, "Action: Login\r\nUsername: $username\r\nSecret: $password\r\nEvents: off\r\n\r\n");
-    
-            // Buscar contatos pendentes
+{
+    // Configurações do Asterisk
+    $host = "127.0.0.1";
+    $port = 5038;
+    $username = "admin";
+    $password = "MKsx2377!@";
+    $context = "testefone";
+    $priority = 1;
+
+    Log::info("Iniciando campanha com ID: {$campaignId}");
+
+    try {
+        // Buscar campanha no banco
+        $campaign = Campaign::find($campaignId);
+
+        if (!$campaign) {
+            Log::error("Campanha não encontrada: ID {$campaignId}");
+            return response()->json(['message' => 'Campanha não encontrada.'], 404);
+        }
+
+        Log::info("Campanha encontrada: {$campaign->name}");
+
+        // Verificar horários permitidos
+        $currentDateTime = Carbon::now();
+        if ($currentDateTime->lt(Carbon::parse($campaign->start_date)) || $currentDateTime->gt(Carbon::parse($campaign->end_date))) {
+            Log::warning("Campanha fora do horário permitido. Início: {$campaign->start_date}, Fim: {$campaign->end_date}, Agora: {$currentDateTime}");
+            return response()->json(['message' => 'Campanha não pode ser iniciada fora do horário configurado.'], 403);
+        }
+
+        Log::info("Horário permitido validado. Atualizando status da campanha para 'in_progress'.");
+
+        // Atualizar status para "in_progress"
+        $campaign->update(['status' => 'in_progress']);
+
+        // Mensagem de sucesso inicial
+        Log::info("Campanha ID {$campaignId} iniciada com sucesso.");
+        echo json_encode(['message' => 'Campanha iniciada com sucesso!']);
+
+        // Conectar ao Asterisk AMI
+        Log::info("Conectando ao Asterisk AMI...");
+        $socket = fsockopen($host, $port, $errno, $errstr, 10);
+        if (!$socket) {
+            Log::error("Erro ao conectar ao AMI: $errstr ($errno)");
+            throw new \Exception("Erro ao conectar ao AMI: $errstr ($errno)");
+        }
+
+        Log::info("Conexão ao Asterisk AMI estabelecida com sucesso.");
+
+        // Fazer login no Asterisk AMI
+        fputs($socket, "Action: Login\r\nUsername: $username\r\nSecret: $password\r\nEvents: on\r\n\r\n");
+
+        // Processar contatos em lotes de 5
+        while (true) {
+            Log::info("Buscando até 5 contatos pendentes para a campanha ID {$campaignId}...");
             $contacts = CampaignContact::where('campaign_id', $campaignId)
                                        ->where('status', 'pending')
+                                       ->take(5)
                                        ->get();
-    
+
             if ($contacts->isEmpty()) {
-                return response()->json(['message' => 'Nenhum contato pendente.'], 404);
+                Log::info("Nenhum contato pendente encontrado. Finalizando campanha ID {$campaignId}.");
+
+                // Atualizar status para "stopped"
+                $campaign->update(['status' => 'stopped']);
+
+                // Mensagem de finalização
+                echo json_encode(['message' => 'Campanha finalizada com sucesso!']);
+                break;
             }
-    
+
+            Log::info(count($contacts) . " contatos pendentes encontrados para processamento.");
+
             foreach ($contacts as $contact) {
                 $callee = $contact->phone_number;
-    
                 $audioFilePath = "custom/" . pathinfo($campaign->audio_file, PATHINFO_FILENAME);
-    
+
+                // Criando a variável CAMPAIGN_NAME com ID do contato e nome da campanha
+                $campaignNameFormatted = "{$contact->id}-{$campaign->name}";
+
                 $originate = "Action: Originate\r\n" .
                              "Channel: SIP/fonetalk/$callee\r\n" .
                              "Exten: $callee\r\n" .
@@ -221,51 +269,129 @@ class CampaignController extends Controller
                              "Callerid: \r\n" .
                              "Timeout: 30000\r\n" .
                              "Async: yes\r\n" .
-                             "Variable: AUDIO_FILE=$audioFilePath\r\n\r\n";
-    
-                fputs($socket, $originate);
-                $contact->update(['status' => 'in_progress']);
-                usleep(500000);
-            }
-    
-            fputs($socket, "Action: Logoff\r\n\r\n");
-            fclose($socket);
-    
-            return response()->json(['message' => 'Campanha iniciada com sucesso!']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-    
+                             "Variable: AUDIO_FILE=$audioFilePath\r\n" .
+                             "Variable: CAMPAIGN_NAME={$campaignNameFormatted}\r\n\r\n";
 
+                fputs($socket, $originate);
+
+                // Atualizar status do contato para "in_progress"
+                $contact->update(['status' => 'in_progress']);
+            }
+
+            Log::info("Aguardando 30 segundos antes de processar o próximo lote de contatos...");
+            sleep(30); // Espera 30 segundos antes de buscar o próximo lote
+        }
+
+        // Fazer logoff do AMI
+        Log::info("Finalizando conexão com o Asterisk AMI...");
+        fputs($socket, "Action: Logoff\r\n\r\n");
+        fclose($socket);
+
+    } catch (\Exception $e) {
+        Log::error("Erro ao processar campanha ID {$campaignId}: " . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
+ 
 
     public function stopCampaign($campaignId)
+{
+    try {
+        // Encontrar a campanha
+        $campaign = Campaign::findOrFail($campaignId);
+
+        // Verificar se a campanha está em progresso
+        if ($campaign->status !== 'in_progress') {
+            return response()->json(['message' => 'A campanha não está em progresso.'], 400);
+        }
+
+        // Atualizar o status da campanha para 'stopped'
+        $campaign->status = 'stopped';
+        $campaign->save();
+
+        // Atualizar o status dos contatos associados para 'paused'
+        CampaignContact::where('campaign_id', $campaignId)
+            ->whereIn('status', ['in_progress', 'pending']) // Atualiza os contatos com status 'in_progress' e 'pending'
+            ->update(['status' => 'paused']);
+
+        return response()->json(['message' => 'Campanha parada com sucesso.']);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erro ao parar a campanha: ' . $e->getMessage()], 500);
+    }
+}
+
+
+public function resetCampaign($campaignId)
+{
+    try {
+        // Encontrar a campanha
+        $campaign = Campaign::findOrFail($campaignId);
+
+        // Verificar se a campanha está com status 'stopped'
+        if ($campaign->status !== 'stopped') {
+            return response()->json(['message' => 'A campanha não está parada. Apenas campanhas paradas podem ser redefinidas.'], 400);
+        }
+
+        // Atualizar o status da campanha para 'pending'
+        $campaign->status = 'pending';
+        $campaign->save();
+
+        // Atualizar o status dos contatos para 'pending'
+        CampaignContact::where('campaign_id', $campaignId)
+            ->whereIn('status', ['paused', 'in_progress'])
+            ->update(['status' => 'pending']);
+
+        return response()->json(['message' => 'Campanha redefinida com sucesso.']);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erro ao redefinir a campanha: ' . $e->getMessage()], 500);
+    }
+}
+
+public function updateStatusFromCdr()
     {
-        try {
-            // Encontrar a campanha
-            $campaign = Campaign::findOrFail($campaignId);
-    
-            // Verificar se a campanha está em progresso
-            if ($campaign->status !== 'in_progress') {
-                return response()->json(['message' => 'A campanha não está em progresso.'], 400);
+        Log::info('Atualizando status dos contatos a partir da tabela CDR.');
+
+        $contacts = CampaignContact::whereIn('status', ['pending', 'in_progress'])->get();
+        
+        foreach ($contacts as $contact) {
+            $cdrEntry = DB::table('cdr')
+                ->where('userfield', 'LIKE', "%{$contact->campaign_id}-{$contact->id}%")
+                ->orderBy('calldate', 'desc')
+                ->first();
+
+            if ($cdrEntry) {
+                if ($cdrEntry->disposition === 'ANSWERED') {
+                    if (strpos($cdrEntry->lastapp, 'Playback') !== false) {
+                        $contact->status = 'heard_audio';
+                    } else {
+                        $contact->status = 'answered';
+                    }
+                } elseif ($cdrEntry->disposition === 'NO ANSWER') {
+                    $contact->status = 'no_answer';
+                } elseif ($cdrEntry->disposition === 'BUSY') {
+                    $contact->status = 'busy';
+                } else {
+                    $contact->status = 'failed';
+                }
+                
+                $contact->save();
+                Log::info("Contato atualizado: {$contact->id} - Status: {$contact->status}");
             }
-    
-            // Atualizar o status da campanha para 'stopped'
-            $campaign->status = 'stopped';
-            $campaign->save();
-    
-            // Atualizar o status dos contatos associados para 'paused' (se necessário)
-            CampaignContact::where('campaign_id', $campaignId)
-                ->where('status', 'in_progress')
-                ->update(['status' => 'paused']);
-    
-            return response()->json(['message' => 'Campanha parada com sucesso.']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao parar a campanha: ' . $e->getMessage()], 500);
         }
     }
+
+
+
+    public function showChannels()
+    {
+       
+            return view('campaign.channels');
+       
+    }
     
-
-
+    
+    
 
 }

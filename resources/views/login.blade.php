@@ -6,16 +6,43 @@
     <title>Login - NeWave One</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Efeito visível no hover */
+        .hover-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 128, 255, 0.2); /* Fundo translúcido azul */
+            opacity: 0; /* Invisível por padrão */
+            transition: opacity 0.3s ease-in-out; /* Transição suave */
+            z-index: 0; /* Atrás do conteúdo */
+            border-radius: 8px; /* Igual ao container */
+        }
+
+        .hover-target:hover .hover-effect {
+            opacity: 1; /* Aparece no hover */
+        }
+
+        /* Certificando-se de que o conteúdo está acima do efeito */
+        .hover-target > * {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 flex items-center justify-center min-h-screen text-white">
-    <!-- Container principal -->
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-lg p-8">
-        <!-- Logo -->
+    <!-- Container principal com hover -->
+    <div class="relative hover-target w-full max-w-md bg-gray-800 rounded-lg shadow-lg p-8">
+        <!-- Efeito de hover -->
+        <div class="hover-effect"></div>
+
+        <!-- Conteúdo do formulário -->
         <div class="text-center mb-6">
             <h1 class="text-4xl font-bold text-green-400">FutureTec <span class="text-blue-400">Server</span></h1>
         </div>
 
-        <!-- Formulário de login -->
         <form action="{{ route('user.login') }}" method="POST" class="space-y-6">
             @csrf
             <!-- Campo E-mail -->

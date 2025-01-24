@@ -52,13 +52,14 @@
                     <td class="text-center">
                         <!-- Botões de ação com base no status -->
                         <div class="d-flex justify-content-center gap-2">
-                        @if ($campaign->status == 'pending' || $campaign->status == 'stopped')
-                            <button class="btn btn-sm btn-success start-campaign" data-id="{{ $campaign->id }}">Iniciar</button>
-                        @elseif ($campaign->status == 'in_progress')
-                            <button class="btn btn-sm btn-danger stop-campaign" data-id="{{ $campaign->id }}">Parar</button>
-                        @endif
-                        <a href="{{ route('campaign.show', $campaign->id) }}" class="btn btn-sm btn-info">Ver</a>
-                        <a href="{{ route('campaign.delete', $campaign->id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta campanha?')">Excluir</a>
+                            @if ($campaign->status == 'pending' || $campaign->status == 'stopped')
+                                <button class="btn btn-sm btn-success start-campaign" data-id="{{ $campaign->id }}">Iniciar</button>
+                            @elseif ($campaign->status == 'in_progress')
+                                <button class="btn btn-sm btn-danger stop-campaign" data-id="{{ $campaign->id }}">Parar</button>
+                            @endif
+                            <button class="btn btn-sm btn-warning reset-campaign" data-id="{{ $campaign->id }}">Resetar</button>
+                            <a href="{{ route('campaign.delete', $campaign->id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta campanha?')">Excluir</a>
+                        </div>
                     </td>
                 </tr>
             @endforeach
@@ -129,6 +130,33 @@ document.addEventListener("DOMContentLoaded", function() {
             })
             .catch(error => {
                 alert("Erro ao parar a campanha!");
+                console.error(error);
+            });
+        });
+    });
+
+    document.querySelectorAll(".reset-campaign").forEach(button => {
+        button.addEventListener("click", function() {
+            let campaignId = this.getAttribute("data-id");
+
+            if (!confirm("Tem certeza que deseja resetar esta campanha?")) {
+                return;
+            }
+
+            fetch(`/campaign/${campaignId}/restart`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); // Atualiza a página
+            })
+            .catch(error => {
+                alert("Erro ao resetar a campanha!");
                 console.error(error);
             });
         });

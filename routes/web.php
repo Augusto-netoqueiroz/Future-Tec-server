@@ -18,6 +18,8 @@ use App\Http\Controllers\CampaignController;
 use \App\Http\Middleware\CheckPermission;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PauseController;
+use App\Http\Controllers\MonitorController;
+
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -215,9 +217,12 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::post('/campanhas/store', [CampaignController::class, 'store'])->name('campaign.store');
 
 Route::get('/campanhas', [CampaignController::class, 'index'])->name('campaign.index');
+Route::get('/campanhas/relatorio', [CampaignController::class, 'report'])->name('report.index');
 Route::get('/campanhas/criar', [CampaignController::class, 'criar'])->name('campaign.criar');
 Route::get('/campaign/{id}', [CampaignController::class, 'show'])->name('campaign.show');
 Route::get('/campaign/{id}/delete', [CampaignController::class, 'delete'])->name('campaign.delete');
+
+Route::post('/campaign/{campaignId}/restart', [CampaignController::class, 'resetCampaign'])->name('campaign.restart');
 
 Route::post('/campaign/{id}/start', [CampaignController::class, 'startCampaign']);
 
@@ -226,8 +231,12 @@ Route::post('/campaign/{campaignId}/stop', [CampaignController::class, 'stopCamp
 
 
 
+Route::get('/campanhas/canais', [CampaignController::class, 'showChannels'])->name('campaign.channels');
 
 
 
 
+Route::post('/save-sippers-data', [MonitorController::class, 'saveSippersData']);
 
+
+Route::get('/monitoramento', [MonitorController::class, 'index'])->name('monitor.index');
