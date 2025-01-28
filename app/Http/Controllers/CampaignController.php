@@ -136,6 +136,8 @@ class CampaignController extends Controller
         foreach ($validNumbers as &$validNumber) {
             $validNumber['campaign_id'] = $campaign->id;
             CampaignContact::create($validNumber);
+        
+        Log::info('Inserindo números válidos...', ['valid_numbers' => $validNumbers]);
         }
 
         // Log dos números inválidos (se houver)

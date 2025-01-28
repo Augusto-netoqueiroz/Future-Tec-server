@@ -1,123 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AMI Channels</title>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.1/dist/socket.io.min.js"></script>
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>AMI: Core Show Channels</h2>
-        
-        <!-- Exibição de Canais Ativos -->
-        <h4>Canais Ativos</h4>
-        <table id="channels-table" class="table table-striped">
+@extends('day.layout')
+
+@section('content')
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Campaign Report</h2>
+        <table class="table-auto w-full border-collapse border border-gray-200 text-sm">
             <thead>
-                <tr>
-                    <th>Canal</th>
-                    <th>Contexto</th>
-                    <th>Extensão</th>
-                    <th>Prioridade</th>
-                    <th>Estado</th>
-                    <th>Aplicação</th>
-                    <th>Dados</th>
-                    <th>Caller ID</th>
-                    <th>Duração</th>
-                    <th>Código de Conta</th>
+                <tr class="bg-gray-100 text-left">
+                    <th class="border border-gray-200 px-4 py-2">ID</th>
+                    <th class="border border-gray-200 px-4 py-2">Name</th>
+                    <th class="border border-gray-200 px-4 py-2">Status</th>
+                    <th class="border border-gray-200 px-4 py-2">Start Date</th>
+                    <th class="border border-gray-200 px-4 py-2">End Date</th>
+                    <th class="border border-gray-200 px-4 py-2">Total Contacts</th>
+                    <th class="border border-gray-200 px-4 py-2">Completed Contacts</th>
+                    <th class="border border-gray-200 px-4 py-2">Pending Contacts</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Os dados dos canais serão inseridos aqui -->
-            </tbody>
-        </table>
-        
-        <!-- Exibição dos Ramais -->
-        <h4>Ramais</h4>
-        <table id="sippers-table" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>IP</th>
-                    <th>Modo</th>
-                    <th>ID do Usuário</th>
-                    <th>Nome do Usuário</th>
-                    <th>Pausa</th>
-                    <th>Início da Pausa</th>
-                    <th>Tempo em Pausa</th>
+                @foreach($reportData as $data)
+                <tr class="hover:bg-gray-50">
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->id }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->name }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->status }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->start_date }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->end_date }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->total_contacts }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->completed_contacts }}</td>
+                    <td class="border border-gray-200 px-4 py-2">{{ $data->pending_contacts }}</td>
                 </tr>
-            </thead>
-            <tbody>
-                <!-- Os dados dos ramais serão inseridos aqui -->
+                @endforeach
             </tbody>
         </table>
+
+        @if ($reportData->isEmpty())
+        <p class="text-center text-gray-500 py-4">No campaigns found.</p>
+        @endif
     </div>
-
-    <script>
-        // Conectar ao servidor Socket.IO
-         const socket = io("http://93.127.212.237:4000");  // Altere para a URL correta do seu servidor Socket.IO
-
-        // Escutar os eventos emitidos pelo servidor para canais ativos
-        socket.on('active-channels', (channels) => {
-            console.log('Canais Ativos:', channels);
-            updateActiveChannels(channels);
-        });
-
-        // Escutar os eventos emitidos pelo servidor para ramais
-        socket.on('fetch-sippers-response', (data) => {
-            console.log('Dados dos Ramais:', data);
-            updateSippersData(data);
-        });
-
-        // Função para atualizar os dados dos canais ativos
-        function updateActiveChannels(channels) {
-            const tableBody = document.querySelector('#channels-table tbody');
-            tableBody.innerHTML = ''; // Limpa a tabela antes de adicionar os novos dados
-
-            channels.forEach(channel => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${channel.channel}</td>
-                    <td>${channel.context}</td>
-                    <td>${channel.extension}</td>
-                    <td>${channel.priority}</td>
-                    <td>${channel.state}</td>
-                    <td>${channel.application}</td>
-                    <td>${channel.data || ''}</td>
-                    <td>${channel.callerID}</td>
-                    <td>${channel.duration}</td>
-                    <td>${channel.accountCode || ''}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Função para atualizar os dados dos ramais
-        function updateSippersData(data) {
-            const tableBody = document.querySelector('#sippers-table tbody');
-            tableBody.innerHTML = ''; // Limpa a tabela antes de adicionar os novos dados
-
-            data.forEach(sipper => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${sipper.name}</td>
-                    <td>${sipper.ipaddr}</td>
-                    <td>${sipper.modo}</td>
-                    <td>${sipper.user_id}</td>
-                    <td>${sipper.user_name}</td>
-                    <td>${sipper.pause_name || ''}</td>
-                    <td>${sipper.started_at || ''}</td>
-                    <td>${sipper.time_in_pause || ''}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Escutar evento de erro
-        socket.on('fetch-data-error', (error) => {
-            console.error('Erro ao buscar dados:', error);
-            alert(`Erro: ${error.message}`);
-        });
-    </script>
-</body>
-</html>
+</div>
+@endsection

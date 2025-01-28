@@ -7,7 +7,7 @@
     <div class="row">
         <!-- Seção de Ramais -->
         <div class="col-md-8">
-            <h1 class="text-primary">Dados da Tabela Sippeers</h1>
+            <h1 class="text-primary">Monitor de Ramais e Ligações</h1>
             <!-- Container para os cards -->
             <div class="row" id="sippers-cards">
                 <!-- Os cards serão adicionados aqui via JavaScript -->
@@ -15,7 +15,7 @@
         </div>
 
         <!-- Seção de Filas -->
-        <div class="col-md-3 d-flex justify-content-end"> <!-- Alinhado à direita -->
+        <div class="col-md-3 d-flex justify-content-end">
             <div>
                 <div class="d-flex justify-content-end mb-2">
                     <div class="form-check form-switch" style="transform: scale(1.3);">
@@ -39,96 +39,125 @@
 <script>
     const socket = io("http://93.127.212.237:4000");
 
-    function formatTime(seconds) {
-        const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
-        const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-        const secs = (seconds % 60).toString().padStart(2, '0');
-        return `${hrs}:${mins}:${secs}`;
-    }
+    const cardTimers = {};
+    let activeChannels = {};
 
-    socket.on('connect', () => {
-        console.log('Conectado ao servidor Socket.IO');
-        socket.emit('fetch-sippers');
-    });
+    // Atualizar dados dos ramais (fetch-sippers-response)
+    socket.on('fetch-unified-data-response', (data) => {
+        console.log("Recebido evento fetch-sippers-response:", data);
 
-    socket.on('fetch-sippers-response', (data) => {
         const cardsContainer = document.querySelector("#sippers-cards");
-        cardsContainer.innerHTML = "";
+        cardsContainer.innerHTML = ""; // Limpa os cards existentes
 
+        // Renderizar cards para cada ramal
         data.forEach((sipper) => {
             const card = document.createElement("div");
             card.classList.add("col-md-6", "mb-4");
+            card.id = `card-${sipper.name}`; // ID do card baseado no nome do ramal
+
             card.innerHTML = `
-                <div class="card" id="card-${sipper.id}">
+                <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">${sipper.name}</h5>
                         <span class="badge">${sipper.user_name || "Desconhecido"}</span>
                         <p class="card-text mt-3">
-                            <strong>Status:</strong> <span class="status">${sipper.status || "Desconhecido"}</span><br>
-                            <strong>Início:</strong> ${sipper.started_at || "N/A"}<br>
-                            <strong>Tempo:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
+                            <strong>Status:</strong> <span class="status">Disponível</span><br>
+                            <strong>Ligação:</strong> <span class="call-info"></span><br>
+                            <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
                         </p>
                     </div>
                 </div>
             `;
-
             cardsContainer.appendChild(card);
-            updateCardStyle(sipper);
         });
     });
 
-    function updateCardStyle(sipper) {
-        const card = document.querySelector(`#card-${sipper.id}`);
-        const timeSpan = card.querySelector('.time');
-        let timeInSeconds = 0;
+    // Atualizar status de ligações ativas (raw-canais)
+    socket.on("raw-canais", (data) => {
+        console.log("Recebido evento raw-canais:", data);
 
-        switch (sipper.status) {
-            case 'Ringing':
-                card.classList.add('ringing');
-                card.classList.remove('ring', 'call');
-                startTimer(timeSpan, sipper.time_in_status || 0);
-                break;
-            case 'Ring':
-                card.classList.add('ring');
-                card.classList.remove('ringing', 'call');
-                startTimer(timeSpan, sipper.time_in_status || 0);
-                break;
-            case 'Call':
-                card.classList.add('call');
-                card.classList.remove('ring', 'ringing');
-                startTimer(timeSpan, sipper.time_in_status || 0);
-                break;
-            default:
-                card.classList.remove('ring', 'ringing', 'call');
-                timeSpan.textContent = sipper.time_in_pause || "00:00:00";
-                break;
-        }
-    }
+        const channels = data.slice(1, -2).map((line) => line.trim());
 
-    function startTimer(element, initialTime) {
-        let timeInSeconds = initialTime;
-        element.textContent = formatTime(timeInSeconds);
+        channels.forEach((rawChannel) => {
+            const [channel, , , , state] = rawChannel.trim().split(/\s+/);
+            const extension = extractExtension(channel);
 
-        setInterval(() => {
-            timeInSeconds++;
-            element.textContent = formatTime(timeInSeconds);
-        }, 1000);
-    }
+            if (!extension) return;
 
-    socket.on('disconnect', () => {
-        alert('Desconectado do servidor Socket.IO!');
+            activeChannels[extension] = state;
+
+            const card = document.querySelector(`#card-${extension}`);
+            if (card) {
+                const statusElement = card.querySelector(".status");
+                const callInfoElement = card.querySelector(".call-info");
+
+                // Atualiza o status do card
+                if (state === "Up") {
+                    statusElement.textContent = "Em Chamada";
+                    callInfoElement.textContent = "Ligação ativa";
+                    card.classList.add("call");
+                    card.classList.remove("ringing", "ring");
+                } else if (state === "Ringing") {
+                    statusElement.textContent = "Tocando";
+                    callInfoElement.textContent = "Ligação tocando";
+                    card.classList.add("ringing");
+                    card.classList.remove("call", "ring");
+                } else if (state === "Ring") {
+                    statusElement.textContent = "Chamada em Andamento";
+                    callInfoElement.textContent = "Conectando...";
+                    card.classList.add("ring");
+                    card.classList.remove("call", "ringing");
+                }
+
+                // Timer para restaurar estado padrão
+                clearTimeout(cardTimers[extension]);
+                cardTimers[extension] = setTimeout(() => {
+                    restoreDefaultState([extension]);
+                }, 5000);
+            }
+        });
+
+        // Restaura estados padrão de ramais sem eventos
+        const activeExtensions = Object.keys(activeChannels);
+        restoreDefaultState(activeExtensions);
     });
+
+    // Função para restaurar estados dos cards
+    function restoreDefaultState(activeExtensions) {
+        const allCards = document.querySelectorAll("[id^='card-']");
+
+        allCards.forEach((card) => {
+            const extension = card.id.split('-')[1];
+
+            if (!activeExtensions.includes(extension)) {
+                if (!cardTimers[extension]) {
+                    const statusElement = card.querySelector('.status');
+                    const callInfoElement = card.querySelector('.call-info');
+
+                    // Restaurar estado padrão
+                    statusElement.textContent = "Disponível";
+                    callInfoElement.textContent = "";
+                    card.classList.remove("call", "ringing", "ring");
+                }
+            }
+        });
+    }
+
+    // Função para extrair a extensão do canal
+    function extractExtension(channel) {
+        const match = channel.match(/^SIP\/(\d+)-/);
+        return match ? match[1] : null;
+    }
 </script>
 
 <style>
+    /* Estilo dos cards */
     .card {
-        position: relative;
         background-color: #17a2b8;
         color: #ffffff;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        text-align: center;
         padding: 15px;
+        text-align: center;
         transition: transform 0.3s, box-shadow 0.3s;
     }
 
@@ -158,12 +187,6 @@
         75% {
             transform: translateX(-5px);
         }
-    }
-
-    .time {
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-top: 10px;
     }
 </style>
 @endsection

@@ -70,8 +70,8 @@ ami.on('error', (err) => {
     console.error('Erro de conexão AMI:', err);
 });
 
-function fetchAndEmitData() {
-    // Buscar ramais (sippers)
+function fetchAndEmitUnifiedData() {
+    // Buscar ramais (sippeers)
     const querySippeers = `
     SELECT name, ipaddr, modo, user_id, user_name 
     FROM sippeers
@@ -80,10 +80,10 @@ function fetchAndEmitData() {
 
     db.query(querySippeers, (err, sippersResults) => {
         if (err) {
-            console.error("Erro ao buscar dados no banco:", err);
+            console.error("Erro ao buscar ramais no banco:", err);
             io.emit("fetch-data-error", { 
                 type: "sippers",
-                message: "Erro ao buscar dados no banco.", 
+                message: "Erro ao buscar dados dos ramais.", 
                 details: err.message 
             });
             return;
@@ -91,6 +91,35 @@ function fetchAndEmitData() {
 
         // Adicionar dados das pausas aos ramais
         const userIds = sippersResults.map(sipper => sipper.user_id).filter(id => id);
+        const pausesMap = {};
+
+        const enrichSippeersData = () => {
+            const enrichedResults = sippersResults.map(sipper => {
+                const pauseData = pausesMap[sipper.user_id];
+                let timeInPause = null;
+
+                if (pauseData && pauseData.started_at) {
+                    const pauseStart = new Date(pauseData.started_at);
+                    const now = new Date();
+                    const diffMs = now - pauseStart;
+                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    const diffSecs = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+                    timeInPause = `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+                }
+
+                return {
+                    ...sipper,
+                    pause_name: pauseData?.pause_name || null,
+                    started_at: pauseData?.started_at || null,
+                    time_in_pause: timeInPause,
+                };
+            });
+
+            fetchAndEmitRawChannels(enrichedResults); // Continuar com a lógica de canais
+        };
+
         if (userIds.length > 0) {
             const queryPauses = `
             SELECT user_id, pause_name, started_at
@@ -110,47 +139,25 @@ function fetchAndEmitData() {
                     return;
                 }
 
-                const pausesMap = {};
                 pausesResults.forEach(pause => {
                     if (!pausesMap[pause.user_id]) {
                         pausesMap[pause.user_id] = {
                             pause_name: pause.pause_name,
-                            started_at: pause.started_at
+                            started_at: pause.started_at,
                         };
                     }
                 });
 
-                const enrichedResults = sippersResults.map(sipper => {
-                    const pauseData = pausesMap[sipper.user_id];
-                    let timeInPause = null;
-
-                    if (pauseData && pauseData.started_at) {
-                        const pauseStart = new Date(pauseData.started_at);
-                        const now = new Date();
-                        const diffMs = now - pauseStart;
-                        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                        const diffSecs = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-                        timeInPause = `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
-                    }
-
-                    return {
-                        ...sipper,
-                        pause_name: pauseData?.pause_name || null,
-                        started_at: pauseData?.started_at || null,
-                        time_in_pause: timeInPause
-                    };
-                });
-
-                io.emit("fetch-sippers-response", enrichedResults);
+                enrichSippeersData();
             });
         } else {
-            io.emit("fetch-sippers-response", sippersResults);
+            enrichSippeersData();
         }
     });
+}
 
-    // Buscar canais ativos
+function fetchAndEmitRawChannels(enrichedSippeers) {
+    // Enviar o comando "core show channels verbose"
     ami.action(
         {
             action: "Command",
@@ -167,6 +174,7 @@ function fetchAndEmitData() {
                 return;
             }
 
+            // Validar se há uma resposta válida e se contém a saída esperada
             if (!res || !Array.isArray(res.output)) {
                 console.error("Formato inesperado da resposta do AMI:", res);
                 io.emit("fetch-data-error", {
@@ -177,50 +185,32 @@ function fetchAndEmitData() {
                 return;
             }
 
-            try {
-                const lines = res.output;
-                const channels = lines
-                    .slice(1, -3)
-                    .filter((line) => line.trim())
-                    .map((line) => {
-                        const regex = /^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.*\S)?\s+(\S+)\s+(\S+)\s*(.*)$/;
-                        const match = line.match(regex);
+          // Combine os dados dos ramais com os canais ativos
+const activeChannels = res.output.filter(line => line.startsWith("SIP/")).map(line => {
+    return line.trim(); // Mantém a string raw, sem separar em partes
+});
 
-                        if (!match) {
-                            console.warn("Linha com formato inesperado:", line);
-                            return null;
-                        }
 
-                        return {
-                            channel: match[1],
-                            context: match[2],
-                            extension: match[3],
-                            priority: match[4],
-                            state: match[5],
-                            application: match[6],
-                            data: match[7]?.trim() || null,
-                            callerID: match[8],
-                            duration: match[9],
-                            accountCode: match[10] || null,
-                        };
-                    })
-                    .filter((channel) => channel !== null);
+            // Mapear os ramais com canais ativos
+            const finalData = enrichedSippeers.map(sipper => {
+                const activeChannel = activeChannels.find(channel => channel.channel.includes(sipper.name));
+                return {
+                    ...sipper,
+                    call_state: activeChannel ? activeChannel.state : "Disponível",
+                    call_duration: activeChannel ? activeChannel.duration : null,
+                };
+            });
 
-                io.emit("active-channels", channels);
-            } catch (error) {
-                console.error("Erro ao processar os canais ativos:", error);
-                io.emit("fetch-data-error", {
-                    type: "channels",
-                    message: "Erro ao processar os canais ativos.",
-                    details: error.message,
-                });
-            }
+            // Emitir os dados combinados
+            io.emit("fetch-unified-data-response", finalData);
         }
     );
 }
 
 // Iniciar o polling combinado
-setInterval(fetchAndEmitData, 2000);
+setInterval(fetchAndEmitUnifiedData, 2000);
+
+
 
 // Manter a conexão ativa e desconectar do AMI corretamente
 process.on('SIGINT', () => {

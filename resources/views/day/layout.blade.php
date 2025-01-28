@@ -542,6 +542,34 @@ License: For each use you must have a valid license purchased only from above li
 											</a>
 										</div>
 									</div>
+
+									<div class="menu-sub menu-sub-accordion">
+										<!--begin:Menu link-->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('campaign.channels') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Monitor</span>
+											</a>
+										</div>
+									</div>
+
+									
+									<div class="menu-sub menu-sub-accordion">
+										<!--begin:Menu link-->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('report.index') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Relatório</span>
+											</a>
+										</div>
+									</div>
+
+									
+
 								</div>
 								<!-- Fim do Menu Campanhas -->		
 							
