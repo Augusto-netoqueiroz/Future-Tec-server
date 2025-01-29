@@ -71,7 +71,6 @@ ami.on('error', (err) => {
 });
 
 function fetchAndEmitUnifiedData() {
-    // Buscar ramais (sippeers)
     const querySippeers = `
     SELECT name, ipaddr, modo, user_id, user_name 
     FROM sippeers
@@ -81,15 +80,9 @@ function fetchAndEmitUnifiedData() {
     db.query(querySippeers, (err, sippersResults) => {
         if (err) {
             console.error("Erro ao buscar ramais no banco:", err);
-            io.emit("fetch-data-error", { 
-                type: "sippers",
-                message: "Erro ao buscar dados dos ramais.", 
-                details: err.message 
-            });
             return;
         }
 
-        // Adicionar dados das pausas aos ramais
         const userIds = sippersResults.map(sipper => sipper.user_id).filter(id => id);
         const pausesMap = {};
 
@@ -117,7 +110,7 @@ function fetchAndEmitUnifiedData() {
                 };
             });
 
-            fetchAndEmitRawChannels(enrichedResults); // Continuar com a lógica de canais
+            fetchAndEmitRawChannels(enrichedResults); // Continuação
         };
 
         if (userIds.length > 0) {
@@ -131,11 +124,6 @@ function fetchAndEmitUnifiedData() {
             db.query(queryPauses, userIds, (err, pausesResults) => {
                 if (err) {
                     console.error("Erro ao buscar dados das pausas:", err);
-                    io.emit("fetch-data-error", { 
-                        type: "sippers",
-                        message: "Erro ao buscar dados das pausas.", 
-                        details: err.message 
-                    });
                     return;
                 }
 
@@ -157,7 +145,6 @@ function fetchAndEmitUnifiedData() {
 }
 
 function fetchAndEmitRawChannels(enrichedSippeers) {
-    // Enviar o comando "core show channels verbose"
     ami.action(
         {
             action: "Command",
@@ -166,50 +153,60 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
         (err, res) => {
             if (err) {
                 console.error("Erro ao buscar canais ativos:", err);
-                io.emit("fetch-data-error", {
-                    type: "channels",
-                    message: "Erro ao buscar canais ativos.",
-                    details: err.message,
-                });
                 return;
             }
 
-            // Validar se há uma resposta válida e se contém a saída esperada
             if (!res || !Array.isArray(res.output)) {
                 console.error("Formato inesperado da resposta do AMI:", res);
-                io.emit("fetch-data-error", {
-                    type: "channels",
-                    message: "Formato inesperado da resposta do AMI.",
-                    details: res,
-                });
                 return;
             }
 
-          // Combine os dados dos ramais com os canais ativos
-const activeChannels = res.output.filter(line => line.startsWith("SIP/")).map(line => {
-    return line.trim(); // Mantém a string raw, sem separar em partes
-});
+            const activeChannels = res.output
+                .filter(line => line.startsWith("SIP/"))
+                .map(line => line.trim());
 
-
-            // Mapear os ramais com canais ativos
             const finalData = enrichedSippeers.map(sipper => {
-                const activeChannel = activeChannels.find(channel => channel.channel.includes(sipper.name));
+                const activeChannel = activeChannels.find(channel => channel.includes(sipper.name));
                 return {
                     ...sipper,
-                    call_state: activeChannel ? activeChannel.state : "Disponível",
-                    call_duration: activeChannel ? activeChannel.duration : null,
+                    call_state: activeChannel ? "Em Chamada" : "Disponível",
+                    call_duration: activeChannel ? "Calculando..." : null,
                 };
             });
 
-            // Emitir os dados combinados
-            io.emit("fetch-unified-data-response", finalData);
+            fetchQueueData(finalData);
         }
     );
 }
 
-// Iniciar o polling combinado
-setInterval(fetchAndEmitUnifiedData, 2000);
+function fetchQueueData(finalData) {
+    ami.action(
+        {
+            action: 'Command',
+            command: 'queue show'
+        },
+        (err, res) => {
+            if (err) {
+                console.error("Erro ao buscar dados das filas:", err);
+                return;
+            }
 
+            const queueData = res?.output || [];
+
+            // Emitindo tudo em **uma única mensagem**
+            io.emit("fetch-unified-data-response", {
+                sippeers: finalData,
+                queueData: queueData
+            });
+
+            // Espera 1 segundo antes de rodar novamente
+            setTimeout(fetchAndEmitUnifiedData, 1000);
+        }
+    );
+}
+
+// Inicia o loop com 1 única execução por segundo
+fetchAndEmitUnifiedData();
 
 
 // Manter a conexão ativa e desconectar do AMI corretamente

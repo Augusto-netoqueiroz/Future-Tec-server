@@ -39,154 +39,139 @@
 <script>
     const socket = io("http://93.127.212.237:4000");
 
-    const cardTimers = {};
-    let activeChannels = {};
+const cardTimers = {};
+let activeChannels = {};
 
-    // Atualizar dados dos ramais (fetch-sippers-response)
-    socket.on('fetch-unified-data-response', (data) => {
-        console.log("Recebido evento fetch-sippers-response:", data);
+// Atualizar dados unificados
+socket.on('fetch-unified-data-response', (data) => {
+    console.log("Recebido evento fetch-unified-data-response:", data);
 
-        const cardsContainer = document.querySelector("#sippers-cards");
-        cardsContainer.innerHTML = ""; // Limpa os cards existentes
+    atualizarRamais(data.sippeers);
+    atualizarFilas(data.queueData);
+});
 
-        // Renderizar cards para cada ramal
-        data.forEach((sipper) => {
-            const card = document.createElement("div");
-            card.classList.add("col-md-6", "mb-4");
-            card.id = `card-${sipper.name}`; // ID do card baseado no nome do ramal
+// Atualizar ramais
+function atualizarRamais(sippeers) {
+    const cardsContainer = document.querySelector("#sippers-cards");
+    cardsContainer.innerHTML = ""; // Limpa os cards existentes
 
-            card.innerHTML = `
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">${sipper.name}</h5>
-                        <span class="badge">${sipper.user_name || "Desconhecido"}</span>
-                        <p class="card-text mt-3">
-                            <strong>Status:</strong> <span class="status">Disponível</span><br>
-                            <strong>Ligação:</strong> <span class="call-info"></span><br>
-                            <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
-                        </p>
-                    </div>
+    sippeers.forEach((sipper) => {
+        const card = document.createElement("div");
+        card.classList.add("col-md-6", "mb-4");
+        card.id = `card-${sipper.name}`; // ID do card baseado no nome do ramal
+
+        card.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">${sipper.name}</h5>
+                    <span class="badge">${sipper.user_name || "Desconhecido"}</span>
+                    <p class="card-text mt-3">
+                        <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
+                        <strong>Ligação:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
+                        <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
+                    </p>
                 </div>
-            `;
-            cardsContainer.appendChild(card);
-        });
+            </div>
+        `;
+        cardsContainer.appendChild(card);
+
+        // Atualiza a cor do card conforme o status da chamada
+        atualizarEstadoDoCard(sipper.name, sipper.call_state);
     });
+}
 
-    // Atualizar status de ligações ativas (raw-canais)
-    socket.on("raw-canais", (data) => {
-        console.log("Recebido evento raw-canais:", data);
+// Atualizar estado dos cards com base na chamada
+function atualizarEstadoDoCard(extension, callState) {
+    const card = document.querySelector(`#card-${extension}`);
+    if (!card) return;
 
-        const channels = data.slice(1, -2).map((line) => line.trim());
+    const statusElement = card.querySelector(".status");
+    const callInfoElement = card.querySelector(".call-info");
 
-        channels.forEach((rawChannel) => {
-            const [channel, , , , state] = rawChannel.trim().split(/\s+/);
-            const extension = extractExtension(channel);
+    if (callState === "Em Chamada") {
+        statusElement.textContent = "Em Chamada";
+        callInfoElement.textContent = "Ligação ativa";
+        card.classList.add("call");
+        card.classList.remove("ringing", "ring");
+    } else if (callState === "Tocando") {
+        statusElement.textContent = "Tocando";
+        callInfoElement.textContent = "Ligação tocando";
+        card.classList.add("ringing");
+        card.classList.remove("call", "ring");
+    } else if (callState === "Chamada em Andamento") {
+        statusElement.textContent = "Conectando...";
+        callInfoElement.textContent = "Ligação em progresso";
+        card.classList.add("ring");
+        card.classList.remove("call", "ringing");
+    } else {
+        statusElement.textContent = "Disponível";
+        callInfoElement.textContent = "";
+        card.classList.remove("call", "ringing", "ring");
+    }
+}
 
-            if (!extension) return;
+// Atualizar dados das filas
+function atualizarFilas(queueData) {
+    const queueTable = document.querySelector("#queue-table");
+    queueTable.innerHTML = ""; // Limpa os dados antigos
 
-            activeChannels[extension] = state;
-
-            const card = document.querySelector(`#card-${extension}`);
-            if (card) {
-                const statusElement = card.querySelector(".status");
-                const callInfoElement = card.querySelector(".call-info");
-
-                // Atualiza o status do card
-                if (state === "Up") {
-                    statusElement.textContent = "Em Chamada";
-                    callInfoElement.textContent = "Ligação ativa";
-                    card.classList.add("call");
-                    card.classList.remove("ringing", "ring");
-                } else if (state === "Ringing") {
-                    statusElement.textContent = "Tocando";
-                    callInfoElement.textContent = "Ligação tocando";
-                    card.classList.add("ringing");
-                    card.classList.remove("call", "ring");
-                } else if (state === "Ring") {
-                    statusElement.textContent = "Chamada em Andamento";
-                    callInfoElement.textContent = "Conectando...";
-                    card.classList.add("ring");
-                    card.classList.remove("call", "ringing");
-                }
-
-                // Timer para restaurar estado padrão
-                clearTimeout(cardTimers[extension]);
-                cardTimers[extension] = setTimeout(() => {
-                    restoreDefaultState([extension]);
-                }, 5000);
-            }
-        });
-
-        // Restaura estados padrão de ramais sem eventos
-        const activeExtensions = Object.keys(activeChannels);
-        restoreDefaultState(activeExtensions);
-    });
-
-    // Função para restaurar estados dos cards
-    function restoreDefaultState(activeExtensions) {
-        const allCards = document.querySelectorAll("[id^='card-']");
-
-        allCards.forEach((card) => {
-            const extension = card.id.split('-')[1];
-
-            if (!activeExtensions.includes(extension)) {
-                if (!cardTimers[extension]) {
-                    const statusElement = card.querySelector('.status');
-                    const callInfoElement = card.querySelector('.call-info');
-
-                    // Restaurar estado padrão
-                    statusElement.textContent = "Disponível";
-                    callInfoElement.textContent = "";
-                    card.classList.remove("call", "ringing", "ring");
-                }
-            }
-        });
+    if (queueData.length === 0) {
+        queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila.</p>";
+        return;
     }
 
-    // Função para extrair a extensão do canal
-    function extractExtension(channel) {
-        const match = channel.match(/^SIP\/(\d+)-/);
-        return match ? match[1] : null;
-    }
+    queueData.forEach((line) => {
+        const p = document.createElement("p");
+        p.textContent = line;
+        queueTable.appendChild(p);
+    });
+}
+
+// Toggle de exibição das filas
+document.querySelector("#queue-toggle").addEventListener("change", (event) => {
+    document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
+});
+
 </script>
 
 <style>
-    /* Estilo dos cards */
-    .card {
-        background-color: #17a2b8;
-        color: #ffffff;
-        border-radius: 10px;
-        padding: 15px;
-        text-align: center;
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
+   /* Estilo dos cards */
+.card {
+    background-color: #17a2b8;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
 
-    .card.ringing {
-        background-color: #ffc107; /* Amarelo para Ringing */
-        animation: shake 0.3s infinite;
-    }
+.card.ringing {
+    background-color: #ffc107; /* Amarelo para Ringing */
+    animation: shake 0.3s infinite;
+}
 
-    .card.ring {
-        background-color: #007bff; /* Azul para Ring */
-    }
+.card.ring {
+    background-color: #007bff; /* Azul para Ring */
+}
 
-    .card.call {
-        background-color: #0056b3; /* Azul escuro para Call */
-    }
+.card.call {
+    background-color: #0056b3; /* Azul escuro para Call */
+}
 
-    @keyframes shake {
-        0%, 100% {
-            transform: translateX(0);
-        }
-        25% {
-            transform: translateX(-5px);
-        }
-        50% {
-            transform: translateX(5px);
-        }
-        75% {
-            transform: translateX(-5px);
-        }
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
     }
+    25% {
+        transform: translateX(-5px);
+    }
+    50% {
+        transform: translateX(5px);
+    }
+    75% {
+        transform: translateX(-5px);
+    }
+}
+
 </style>
 @endsection
