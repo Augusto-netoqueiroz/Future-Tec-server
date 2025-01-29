@@ -76,30 +76,36 @@ function atualizarRamais(sippeers) {
         cardsContainer.appendChild(card);
 
         // Atualiza a cor do card conforme o status da chamada
-        atualizarEstadoDoCard(sipper.name, sipper.call_state);
+        atualizarEstadoDoCard(sipper.name, sipper.call_state, sipper.pause_name);
     });
 }
 
 // Atualizar estado dos cards com base na chamada
-function atualizarEstadoDoCard(extension, callState) {
+// Atualizar estado dos cards com base na chamada e pausa
+function atualizarEstadoDoCard(extension, callState, pauseName) {
     const cardContainer = document.querySelector(`#card-${extension}`);
     if (!cardContainer) return;
 
-    const card = cardContainer.querySelector(".card"); // Aqui pegamos diretamente a div .card
+    const card = cardContainer.querySelector(".card");
     const statusElement = card.querySelector(".status");
     const callInfoElement = card.querySelector(".call-info");
 
-    // Remover todas as classes de estado antes de adicionar a nova
-    card.classList.remove("call", "ringing", "ring", "shake");
+    // Remover todas as classes antes de adicionar a nova
+    card.classList.remove("call", "ringing", "ring", "shake", "paused");
 
-    if (callState === "Em Chamada") {
+    if (pauseName && pauseName !== "Disponível") {
+        // Se o ramal estiver em pausa, exibe a pausa e muda a cor do card
+        statusElement.textContent = `Pausado (${pauseName})`;
+        callInfoElement.textContent = "Em pausa";
+        card.classList.add("paused"); // Adiciona a classe CSS para pausa
+    } else if (callState === "Em Chamada") {
         statusElement.textContent = "Em Chamada";
         callInfoElement.textContent = "Ligação ativa";
         card.classList.add("call");
     } else if (callState === "Tocando") {
         statusElement.textContent = "Tocando";
         callInfoElement.textContent = "Ligação tocando";
-        card.classList.add("ringing", "shake"); // Adiciona o tremor ao tocar
+        card.classList.add("ringing", "shake");
     } else if (callState === "Chamada em Andamento") {
         statusElement.textContent = "Conectando...";
         callInfoElement.textContent = "Ligação em progresso";
@@ -145,48 +151,90 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 
 <style>
  .card {
-    background-color:rgb(61, 204, 180);
-    color: #ffffff;
-    border-radius: 10px;
+    background-color: #1ea965; /* Verde mais moderno */
+    color: white;
+    border-radius: 12px;
     padding: 15px;
     text-align: center;
-    transition: transform 0.3s, background-color 0.3s;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    font-size: 1rem;
+    min-width: 220px;
+    max-width: 250px;
+    position: relative;
 }
 
+.card-body {
+    padding: 10px;
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.card .status {
+    font-weight: bold;
+    display: block;
+    font-size: 0.9rem;
+}
+
+.call-info {
+    font-size: 0.85rem;
+}
+
+.badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #007bff;
+    color: white;
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Ícone do telefone */
+.card::before {
+    content: '📞';
+    font-size: 1.5rem;
+    position: absolute;
+    top: -10px;
+    left: 10px;
+}
+
+/* Cores para os estados */
 .ringing {
-    background-color: #ffc107 !important; /* Cor de fundo amarela com !important */
-    border-color: #ffc107 !important; /* Alterar a cor da borda também */
-    animation: shake 0.5s infinite;
-}
-
-.ring {
-    background-color: #007bff !important; /* Azul */
+    background-color: #ffc107 !important; /* Amarelo */
 }
 
 .call {
     background-color: #dc3545 !important; /* Vermelho */
 }
 
+.ring {
+    background-color: #007bff !important; /* Azul */
+}
+
+.paused {
+    background-color: #f39c12 !important; /* Cor laranja para pausas */
+    color: white;
+}
+
+
+/* Animação de tremor */
 @keyframes shake {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    10%, 90% {
-        transform: translateX(-3px);
-    }
-    20%, 80% {
-        transform: translateX(3px);
-    }
-    30%, 50%, 70% {
-        transform: translateX(-6px);
-    }
-    40%, 60% {
-        transform: translateX(6px);
-    }
+    0%, 100% { transform: translateX(0); }
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-4px); }
+    40%, 60% { transform: translateX(4px); }
 }
 
 .shake {
-    animation: shake 0.5s infinite;
+    animation: shake 0.4s infinite;
 }
 
 </style>

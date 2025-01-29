@@ -94,12 +94,20 @@ function fetchAndEmitUnifiedData() {
                 if (pauseData && pauseData.started_at) {
                     const pauseStart = new Date(pauseData.started_at);
                     const now = new Date();
-                    const diffMs = now - pauseStart;
-                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    const diffSecs = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-                    timeInPause = `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+                
+                    if (!isNaN(pauseStart)) {
+                        const diffMs = now - pauseStart;
+                        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+                
+                        timeInPause = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    } else {
+                        console.error("Data inválida em started_at:", pauseData.started_at);
+                        timeInPause = "00:00:00"; // Garante que o valor não fique errado
+                    }
+                } else {
+                    timeInPause = "00:00:00"; // Se não tiver pausa, retorna sempre "00:00:00"
                 }
 
                 return {
