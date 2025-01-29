@@ -144,6 +144,15 @@ function fetchAndEmitUnifiedData() {
     });
 }
 
+
+function getCallState(line) {
+    if (/Up/.test(line)) return "Em Chamada";
+    if (/Ringing/.test(line)) return "Tocando";
+    if (/Ring/.test(line)) return "Discando";
+    if (/Dial/.test(line)) return "Discando";
+    return "Disponível";
+}
+
 function fetchAndEmitRawChannels(enrichedSippeers) {
     ami.action(
         {
@@ -163,13 +172,19 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
 
             const activeChannels = res.output
                 .filter(line => line.startsWith("SIP/"))
-                .map(line => line.trim());
+                .map(line => {
+                    const parts = line.trim().split(/\s+/); // Divide por espaços
+                    return {
+                        channel: parts[0],  // Exemplo: SIP/1001-00000001
+                        state: getCallState(line), // Obtém o estado correto
+                    };
+                });
 
             const finalData = enrichedSippeers.map(sipper => {
-                const activeChannel = activeChannels.find(channel => channel.includes(sipper.name));
+                const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
                 return {
                     ...sipper,
-                    call_state: activeChannel ? "Em Chamada" : "Disponível",
+                    call_state: activeChannel ? activeChannel.state : "Disponível",
                     call_duration: activeChannel ? "Calculando..." : null,
                 };
             });
@@ -178,6 +193,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
         }
     );
 }
+
 
 function fetchQueueData(finalData) {
     ami.action(

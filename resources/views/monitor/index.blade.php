@@ -82,33 +82,38 @@ function atualizarRamais(sippeers) {
 
 // Atualizar estado dos cards com base na chamada
 function atualizarEstadoDoCard(extension, callState) {
-    const card = document.querySelector(`#card-${extension}`);
-    if (!card) return;
+    const cardContainer = document.querySelector(`#card-${extension}`);
+    if (!cardContainer) return;
 
+    const card = cardContainer.querySelector(".card"); // Aqui pegamos diretamente a div .card
     const statusElement = card.querySelector(".status");
     const callInfoElement = card.querySelector(".call-info");
+
+    // Remover todas as classes de estado antes de adicionar a nova
+    card.classList.remove("call", "ringing", "ring", "shake");
 
     if (callState === "Em Chamada") {
         statusElement.textContent = "Em Chamada";
         callInfoElement.textContent = "Ligação ativa";
         card.classList.add("call");
-        card.classList.remove("ringing", "ring");
     } else if (callState === "Tocando") {
         statusElement.textContent = "Tocando";
         callInfoElement.textContent = "Ligação tocando";
-        card.classList.add("ringing");
-        card.classList.remove("call", "ring");
+        card.classList.add("ringing", "shake"); // Adiciona o tremor ao tocar
     } else if (callState === "Chamada em Andamento") {
         statusElement.textContent = "Conectando...";
         callInfoElement.textContent = "Ligação em progresso";
         card.classList.add("ring");
-        card.classList.remove("call", "ringing");
+    } else if (callState === "Discando") {
+        statusElement.textContent = "Discando";
+        callInfoElement.textContent = "A discagem está em andamento";
+        card.classList.add("ring");
     } else {
         statusElement.textContent = "Disponível";
         callInfoElement.textContent = "";
-        card.classList.remove("call", "ringing", "ring");
     }
 }
+
 
 // Atualizar dados das filas
 function atualizarFilas(queueData) {
@@ -132,45 +137,56 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
     document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
 });
 
+
+
+
+
 </script>
 
 <style>
-   /* Estilo dos cards */
-.card {
-    background-color: #17a2b8;
+ .card {
+    background-color:rgb(61, 204, 180);
     color: #ffffff;
     border-radius: 10px;
     padding: 15px;
     text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s, background-color 0.3s;
 }
 
-.card.ringing {
-    background-color: #ffc107; /* Amarelo para Ringing */
-    animation: shake 0.3s infinite;
+.ringing {
+    background-color: #ffc107 !important; /* Cor de fundo amarela com !important */
+    border-color: #ffc107 !important; /* Alterar a cor da borda também */
+    animation: shake 0.5s infinite;
 }
 
-.card.ring {
-    background-color: #007bff; /* Azul para Ring */
+.ring {
+    background-color: #007bff !important; /* Azul */
 }
 
-.card.call {
-    background-color: #0056b3; /* Azul escuro para Call */
+.call {
+    background-color: #dc3545 !important; /* Vermelho */
 }
 
 @keyframes shake {
     0%, 100% {
         transform: translateX(0);
     }
-    25% {
-        transform: translateX(-5px);
+    10%, 90% {
+        transform: translateX(-3px);
     }
-    50% {
-        transform: translateX(5px);
+    20%, 80% {
+        transform: translateX(3px);
     }
-    75% {
-        transform: translateX(-5px);
+    30%, 50%, 70% {
+        transform: translateX(-6px);
     }
+    40%, 60% {
+        transform: translateX(6px);
+    }
+}
+
+.shake {
+    animation: shake 0.5s infinite;
 }
 
 </style>
