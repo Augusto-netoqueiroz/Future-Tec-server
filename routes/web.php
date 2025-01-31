@@ -19,13 +19,14 @@ use \App\Http\Middleware\CheckPermission;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PauseController;
 use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\Liguetalkcontroller;
 
 
 Route::get('/', function () {
     if (Auth::check()) {
-        return redirect()->route('index');
+        return redirect()->route('home');
     }
-    return view('index'); // Renderiza a view do tema para usuários não autenticados
+    return view('login'); // Renderiza a view do tema para usuários não autenticados
 })->name('root');
 
 // Rota home
@@ -240,3 +241,7 @@ Route::post('/save-sippers-data', [MonitorController::class, 'saveSippersData'])
 
 
 Route::get('/monitoramento', [MonitorController::class, 'index'])->name('monitor.index');
+
+
+
+Route::get('/Liguetalk', [Liguetalkcontroller::class, 'index'])->name('Liguetalk.index');

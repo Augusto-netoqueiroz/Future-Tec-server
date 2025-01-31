@@ -178,22 +178,37 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                 return;
             }
 
-            const activeChannels = res.output
-                .filter(line => line.startsWith("SIP/"))
+            // Mapeando os canais ativos
+                const activeChannels = res.output
+                .filter(line => line.startsWith("SIP/")) 
                 .map(line => {
-                    const parts = line.trim().split(/\s+/); // Divide por espaços
+                    const parts = line.trim().split(/\s+/); 
+                    
+                    // Debug: verificar como está sendo capturado
+                    console.log("Linha bruta:", line);
+                    console.log("Partes extraídas:", parts);
+
                     return {
-                        channel: parts[0],  // Exemplo: SIP/1001-00000001
-                        state: getCallState(line), // Obtém o estado correto
+                        channel: parts[0],    
+                        context: parts[1],    
+                        extension: parts.length > 4 ? parts[4] : null,  // Pode ser que o número correto esteja mais à frente
+                        priority: parts[3],   
+                        state: getCallState(line), 
+                        callerID: parts.length > 7 ? parts[7] : null,  
+                        duration: parts.length > 8 ? parts[8] : null,  
                     };
                 });
 
+            // Mapeando os ramais com os dados extraídos
             const finalData = enrichedSippeers.map(sipper => {
                 const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
+                
                 return {
                     ...sipper,
                     call_state: activeChannel ? activeChannel.state : "Disponível",
-                    call_duration: activeChannel ? "Calculando..." : null,
+                    call_duration: activeChannel ? activeChannel.duration : null,
+                    calling_from: activeChannel ? activeChannel.callerID : null, // Quem está ligando
+                    calling_to: activeChannel ? activeChannel.extension : null, // Quem está recebendo
                 };
             });
 
@@ -201,6 +216,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
         }
     );
 }
+
 
 
 function fetchQueueData(finalData) {

@@ -1,16 +1,5 @@
 <!DOCTYPE html>
-<!--
-Author: Keenthemes
-Product Name: Saul
-Product Version: 1.0.0
-Upgrade to Pro: https://keenthemes.com/products/saul-html-pro
-Website: http://www.keenthemes.com
-Contact: support@keenthemes.com
-Follow: www.twitter.com/keenthemes
-Dribbble: www.dribbble.com/keenthemes
-Like: www.facebook.com/keenthemes
-License: For each use you must have a valid license purchased only from above link in order to legally use the theme for your project.
--->
+
 <html lang="en">
 	<!--begin::Head-->
 	<head>

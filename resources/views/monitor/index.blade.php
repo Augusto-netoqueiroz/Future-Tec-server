@@ -39,119 +39,111 @@
 <script>
     const socket = io("http://93.127.212.237:4000");
 
-const cardTimers = {};
-let activeChannels = {};
+    socket.on('fetch-unified-data-response', (data) => {
+        console.log("Recebido evento fetch-unified-data-response:", data);
 
-// Atualizar dados unificados
-socket.on('fetch-unified-data-response', (data) => {
-    console.log("Recebido evento fetch-unified-data-response:", data);
-
-    atualizarRamais(data.sippeers);
-    atualizarFilas(data.queueData);
-});
-
-// Atualizar ramais
-function atualizarRamais(sippeers) {
-    const cardsContainer = document.querySelector("#sippers-cards");
-    cardsContainer.innerHTML = ""; // Limpa os cards existentes
-
-    sippeers.forEach((sipper) => {
-        const card = document.createElement("div");
-        card.classList.add("col-md-6", "mb-4");
-        card.id = `card-${sipper.name}`; // ID do card baseado no nome do ramal
-
-        card.innerHTML = `
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">${sipper.name}</h5>
-                    <span class="badge">${sipper.user_name || "Desconhecido"}</span>
-                    <p class="card-text mt-3">
-                        <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
-                        <strong>Ligação:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
-                        <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
-                    </p>
-                </div>
-            </div>
-        `;
-        cardsContainer.appendChild(card);
-
-        // Atualiza a cor do card conforme o status da chamada
-        atualizarEstadoDoCard(sipper.name, sipper.call_state, sipper.pause_name);
+        atualizarRamais(data.sippeers);
+        atualizarFilas(data.queueData);
     });
-}
 
-// Atualizar estado dos cards com base na chamada
-// Atualizar estado dos cards com base na chamada e pausa
-function atualizarEstadoDoCard(extension, callState, pauseName) {
+    function atualizarRamais(sippeers) {
+        const cardsContainer = document.querySelector("#sippers-cards");
+        cardsContainer.innerHTML = "";
+
+        sippeers.forEach((sipper) => {
+            const card = document.createElement("div");
+            card.classList.add("col-md-6", "mb-4");
+            card.id = `card-${sipper.name}`;
+
+            card.innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${sipper.name}</h5>
+                        <span class="badge">${sipper.user_name || "Desconhecido"}</span>
+                        <p class="card-text mt-3">
+                            <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
+                            <strong>Ligação:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
+                            <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+            cardsContainer.appendChild(card);
+
+            atualizarEstadoDoCard(sipper.name, sipper.call_state, sipper.calling_from, sipper.calling_to);
+        });
+    }
+
+   function atualizarEstadoDoCard(extension, callState, calling_from, calling_to) {
     const cardContainer = document.querySelector(`#card-${extension}`);
     if (!cardContainer) return;
 
     const card = cardContainer.querySelector(".card");
     const statusElement = card.querySelector(".status");
     const callInfoElement = card.querySelector(".call-info");
+    let iconElement = card.querySelector(".icon");
 
-    // Remover todas as classes antes de adicionar a nova
-    card.classList.remove("call", "ringing", "ring", "shake", "paused");
+    // Se o elemento de ícone não existir, cria um novo dentro do card
+    if (!iconElement) {
+        iconElement = document.createElement("span");
+        iconElement.classList.add("icon");
+        card.prepend(iconElement); // Adiciona no topo do card
+    }
 
-    if (pauseName && pauseName !== "Disponível") {
-        // Se o ramal estiver em pausa, exibe a pausa e muda a cor do card
-        statusElement.textContent = `Pausado (${pauseName})`;
-        callInfoElement.textContent = "Em pausa";
-        card.classList.add("paused"); // Adiciona a classe CSS para pausa
-    } else if (callState === "Em Chamada") {
+    card.classList.remove("call", "ringing", "ring", "shake");
+
+    if (callState === "Em Chamada") {
         statusElement.textContent = "Em Chamada";
-        callInfoElement.textContent = "Ligação ativa";
+        callInfoElement.textContent = `${calling_from} => ${calling_to}`;
         card.classList.add("call");
+        iconElement.textContent = "🔴";
     } else if (callState === "Tocando") {
         statusElement.textContent = "Tocando";
-        callInfoElement.textContent = "Ligação tocando";
+        callInfoElement.textContent = `Ramal ${calling_to} recebendo ligação do ${calling_from}`;
         card.classList.add("ringing", "shake");
+        iconElement.textContent = "📳";
     } else if (callState === "Chamada em Andamento") {
         statusElement.textContent = "Conectando...";
-        callInfoElement.textContent = "Ligação em progresso";
+        callInfoElement.textContent = `${calling_from} => ${calling_to}`;
         card.classList.add("ring");
+        iconElement.textContent = "🔄";
     } else if (callState === "Discando") {
         statusElement.textContent = "Discando";
-        callInfoElement.textContent = "A discagem está em andamento";
+        callInfoElement.textContent = `Ligação iniciada para ${calling_to}`;
         card.classList.add("ring");
+        iconElement.textContent = "📞";
     } else {
         statusElement.textContent = "Disponível";
         callInfoElement.textContent = "";
+        iconElement.textContent = "✅";
     }
 }
 
+    function atualizarFilas(queueData) {
+        const queueTable = document.querySelector("#queue-table");
+        queueTable.innerHTML = "";
 
-// Atualizar dados das filas
-function atualizarFilas(queueData) {
-    const queueTable = document.querySelector("#queue-table");
-    queueTable.innerHTML = ""; // Limpa os dados antigos
+        if (queueData.length === 0) {
+            queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila.</p>";
+            return;
+        }
 
-    if (queueData.length === 0) {
-        queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila.</p>";
-        return;
+        queueData.forEach((line) => {
+            const p = document.createElement("p");
+            p.textContent = line;
+            queueTable.appendChild(p);
+        });
     }
 
-    queueData.forEach((line) => {
-        const p = document.createElement("p");
-        p.textContent = line;
-        queueTable.appendChild(p);
+    document.querySelector("#queue-toggle").addEventListener("change", (event) => {
+        document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
     });
-}
-
-// Toggle de exibição das filas
-document.querySelector("#queue-toggle").addEventListener("change", (event) => {
-    document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
-});
-
-
-
-
 
 </script>
 
 <style>
- .card {
-    background-color: #1ea965; /* Verde mais moderno */
+.card {
+    background-color: #1ea965;
     color: white;
     border-radius: 12px;
     padding: 15px;
@@ -185,7 +177,7 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 .badge {
     position: absolute;
     top: -10px;
-    left: 50%;
+    left: 80%;
     transform: translateX(-50%);
     background: #007bff;
     color: white;
@@ -196,35 +188,26 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Ícone do telefone */
 .card::before {
-    content: '📞';
+    content: '';
     font-size: 1.5rem;
     position: absolute;
     top: -10px;
     left: 10px;
 }
 
-/* Cores para os estados */
 .ringing {
-    background-color: #ffc107 !important; /* Amarelo */
+    background-color: #ffc107 !important;
 }
 
 .call {
-    background-color: #dc3545 !important; /* Vermelho */
+    background-color: #dc3545 !important;
 }
 
 .ring {
-    background-color: #007bff !important; /* Azul */
+    background-color: #007bff !important;
 }
 
-.paused {
-    background-color: #f39c12 !important; /* Cor laranja para pausas */
-    color: white;
-}
-
-
-/* Animação de tremor */
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     10%, 90% { transform: translateX(-2px); }
@@ -236,6 +219,5 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 .shake {
     animation: shake 0.4s infinite;
 }
-
 </style>
 @endsection
