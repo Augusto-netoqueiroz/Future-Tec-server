@@ -52,7 +52,7 @@ ami.on('connect', () => {
     // Executar comando para monitorar as filas periodicamente
     setInterval(() => {
         ami.action({
-            action: 'Command',  
+            action: 'Command',
             command: 'queue show'
         }, (err, res) => {
             if (err) {
@@ -62,7 +62,7 @@ ami.on('connect', () => {
                 io.emit('queue-data', res);
             }
         });
-    }, 2000); // Intervalo de 5 segundos entre as execuções
+    }, 2000); // Intervalo de 2 segundos entre as execuções
 });
 
 // Tratamento de erros de conexão AMI
@@ -70,6 +70,7 @@ ami.on('error', (err) => {
     console.error('Erro de conexão AMI:', err);
 });
 
+// Função para buscar e emitir dados unificados
 function fetchAndEmitUnifiedData() {
     const querySippeers = `
     SELECT name, ipaddr, modo, user_id, user_name 
@@ -152,7 +153,7 @@ function fetchAndEmitUnifiedData() {
     });
 }
 
-
+// Função para processar o estado da chamada
 function getCallState(line) {
     if (/Up/.test(line)) return "Em Chamada";
     if (/Ringing/.test(line)) return "Tocando";
@@ -161,6 +162,7 @@ function getCallState(line) {
     return "Disponível";
 }
 
+// Função para buscar e emitir dados dos canais ativos
 function fetchAndEmitRawChannels(enrichedSippeers) {
     ami.action(
         {
@@ -178,13 +180,11 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                 return;
             }
 
-            // Mapeando os canais ativos
             const activeChannels = res.output
             .filter(line => line.startsWith("SIP/"))
             .map(line => {
                 const modifiedLine = line.replace("Outgoing Line", "_Outgoing_Line");
         
-                // Expressão regular aprimorada para capturar corretamente os campos
                 const regex = /^(\S+)\s+(\S*)\s+(\S*)\s+(\d+)\s+(\S+)\s+(\S+)\s+(.{1,30}?)\s{2,}(\S*)\s{2,}(\S*)\s{2,}(\S*)$/;
                 const match = modifiedLine.match(regex);
         
@@ -197,9 +197,6 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                     _,   // match[0] é a linha completa, descartamos
                     channel, context, extension, priority, state, application, data, callerID, duration, uniqueID
                 ] = match;
-        
-                console.log("Linha bruta:", line);
-                //console.log("Partes extraídas:", { channel, context, extension, priority, state, application, data, callerID, duration, uniqueID });
         
                 return {
                     channel,
@@ -214,9 +211,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                     uniqueID: uniqueID || null
                 };
             }).filter(Boolean);
-        
 
-            // Mapeando os ramais com os dados extraídos
             const finalData = enrichedSippeers.map(sipper => {
                 const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
 
@@ -224,9 +219,9 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                     ...sipper,
                     call_state: activeChannel ? activeChannel.state : "Disponível",
                     call_duration: activeChannel ? activeChannel.duration : null,
-                    calling_from: activeChannel ? activeChannel.callerID : null, // Quem está ligando
-                    calling_to: activeChannel ? activeChannel.extension : null, // Quem está recebendo
-                    uniqueID: activeChannel ? activeChannel.uniqueID : null // Garantir que o uniqueID esteja aqui
+                    calling_from: activeChannel ? sipper.name : null,
+                    calling_to: activeChannel ? activeChannel.extension : null,
+                    uniqueID: activeChannel ? activeChannel.uniqueID : null
                 };
             });
 
@@ -235,8 +230,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
     );
 }
 
-
-
+// Função para buscar dados das filas
 function fetchQueueData(finalData) {
     ami.action(
         {
@@ -250,26 +244,81 @@ function fetchQueueData(finalData) {
             }
 
             const queueData = res?.output || [];
+            console.log("Linha bruta:", queueData);
 
-            // Emitindo tudo em **uma única mensagem**
+            // Processar e filtrar filas com callers ativos
+            const processedQueueData = processQueueData(queueData);
+
+            // Emitindo os dados já processados
             io.emit("fetch-unified-data-response", {
                 sippeers: finalData,
-                queueData: queueData
+                queueData: processedQueueData
             });
 
-         
-            // Espera 1 segundo antes de rodar novamente
+            // Continuar com o próximo ciclo após 1 segundo
             setTimeout(fetchAndEmitUnifiedData, 1000);
         }
     );
 }
 
-// Inicia o loop com 1 única execução por segundo
-fetchAndEmitUnifiedData();
+// Função para processar as filas
+function processQueueData(queueData) {
+    const filteredQueueData = [];
+    let currentQueue = null;
+    let callers = [];
 
+    queueData.forEach(line => {
+        if (line.match(/^\S+ has \d+ calls/)) {
+            if (currentQueue && callers.length > 0) {
+                filteredQueueData.push({
+                    queueName: currentQueue,
+                    callers: callers
+                });
+            }
+
+            callers = [];
+            currentQueue = line.split(' has ')[0];
+        }
+
+        if (line.match(/^\s+\d+\.\s+SIP/)) {
+            const callerData = extractCallerData(line);
+            if (callerData) {
+                callers.push(callerData);
+            }
+        }
+    });
+
+    if (currentQueue && callers.length > 0) {
+        filteredQueueData.push({
+            queueName: currentQueue,
+            callers: callers
+        });
+    }
+
+    return filteredQueueData;
+}
+
+// Função para extrair os dados do caller
+function extractCallerData(line) {
+    const regex = /^\s+(\d+)\.\s+SIP\/(\S+)\s+\(wait:\s+(\S+),\s+prio:\s+(\d+)\)/;
+    const match = line.match(regex);
+
+    if (match) {
+        return {
+            priority: match[1],
+            caller: match[2],
+            waitTime: match[3]
+        };
+    }
+
+    return null;
+}
+
+// Inicia o loop com 1 execução por segundo
+fetchAndEmitUnifiedData();
 
 // Manter a conexão ativa e desconectar do AMI corretamente
 process.on('SIGINT', () => {
     ami.disconnect();
     process.exit();
-});""
+});

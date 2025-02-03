@@ -46,7 +46,7 @@
         atualizarFilas(data.queueData);
     });
 
-  function atualizarRamais(sippeers) {
+    function atualizarRamais(sippeers) {
     const cardsContainer = document.querySelector("#sippers-cards");
     cardsContainer.innerHTML = "";
 
@@ -68,10 +68,15 @@
         card.id = `card-${sipper.name}`;
 
         let callingFrom = sipper.calling_from || sipper.name; // Origem sempre será o próprio ramal
-        let callingTo = sipper.calling_to || "Desconhecido"; // Destino
+        let callingTo = sipper.calling_to || "";
 
-        // Se callingTo estiver vazio ou for "Desconhecido", ajusta a ligação para garantir que callingFrom venha antes
-        const ligacao = callingTo !== "Desconhecido" ? `${callingFrom} => ${callingTo}` : `${callingFrom} => ${callingFrom}`;
+        // Se calling_to for null, tentamos ajustar com o outro ramal ativo
+        if (!callingTo && chamadasAtivas[sipper.uniqueID]?.length > 1) {
+            const outraParte = chamadasAtivas[sipper.uniqueID].find(c => c.name !== sipper.name);
+            if (outraParte) {
+                callingTo = outraParte.name; // O outro ramal é o destino
+            }
+        }
 
         card.innerHTML = `
             <div class="card">
@@ -80,7 +85,7 @@
                     <span class="badge">${sipper.user_name || "Desconhecido"}</span>
                     <p class="card-text mt-3">
                         <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
-                        <strong>Ligação:</strong> <span class="call-info">${ligacao}</span><br>
+                        <strong>Ligação:</strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
                         <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
                         <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
                     </p>
@@ -139,25 +144,49 @@
     }
 }
 
-    function atualizarFilas(queueData) {
-        const queueTable = document.querySelector("#queue-table");
-        queueTable.innerHTML = "";
+function atualizarFilas(queueData) {
+    const queueTable = document.querySelector("#queue-table");
+    queueTable.innerHTML = "";
 
-        if (queueData.length === 0) {
-            queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila.</p>";
-            return;
-        }
-
-        queueData.forEach((line) => {
-            const p = document.createElement("p");
-            p.textContent = line;
-            queueTable.appendChild(p);
-        });
+    if (queueData.length === 0) {
+        queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila.</p>";
+        return;
     }
 
-    document.querySelector("#queue-toggle").addEventListener("change", (event) => {
-        document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
+    queueData.forEach((queue) => {
+        // Cria o nome da fila
+        const queueNameElement = document.createElement("h3");
+        queueNameElement.textContent = queue.queueName;
+        queueTable.appendChild(queueNameElement);
+
+        // Verifica se há callers na fila
+        if (queue.callers.length > 0) {
+            queue.callers.forEach((caller) => {
+                // Cria um elemento de caller com as informações necessárias
+                const callerInfo = document.createElement("div");
+                callerInfo.classList.add("caller-info");
+                callerInfo.innerHTML = `
+                    <p><strong>Prioridade:</strong> ${caller.priority}</p>
+                    <p><strong>Caller:</strong> ${caller.caller}</p>
+                    <p><strong>Tempo de Espera:</strong> ${caller.waitTime}</p>
+                `;
+                queueTable.appendChild(callerInfo);
+            });
+        } else {
+            // Se não houver callers na fila
+            const noCallersMessage = document.createElement("p");
+            noCallersMessage.classList.add("text-muted");
+            noCallersMessage.textContent = "Sem callers na fila.";
+            queueTable.appendChild(noCallersMessage);
+        }
     });
+}
+
+// Exemplo de como ativar/desativar a exibição da seção de filas com o toggle
+document.querySelector("#queue-toggle").addEventListener("change", (event) => {
+    document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
+});
+
 
 </script>
 
@@ -241,3 +270,5 @@
 }
 </style>
 @endsection
+
+

@@ -1,5 +1,5 @@
-const AsteriskAmi = require('asterisk-ami-client');
-const mysql = require('mysql2/promise');
+import mysql from "mysql2";
+import AsteriskManager from 'asterisk-manager';
 
 // Configurações de conexão AMI
 const ami = new AsteriskAmi({ reconnect: true });
