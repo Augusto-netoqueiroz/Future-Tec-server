@@ -179,30 +179,47 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
             }
 
             // Mapeando os canais ativos
-                const activeChannels = res.output
-                .filter(line => line.startsWith("SIP/")) 
-                .map(line => {
-                    const parts = line.trim().split(/\s+/); 
-                    
-                    // Debug: verificar como está sendo capturado
-                    console.log("Linha bruta:", line);
-                    console.log("Partes extraídas:", parts);
-
-                    return {
-                        channel: parts[0],    
-                        context: parts[1],    
-                        extension: parts.length > 4 ? parts[4] : null,  // Pode ser que o número correto esteja mais à frente
-                        priority: parts[3],   
-                        state: getCallState(line), 
-                        callerID: parts.length > 7 ? parts[7] : null,  
-                        duration: parts.length > 8 ? parts[8] : null,  
-                    };
-                });
+            const activeChannels = res.output
+            .filter(line => line.startsWith("SIP/"))
+            .map(line => {
+                const modifiedLine = line.replace("Outgoing Line", "_Outgoing_Line");
+        
+                // Expressão regular aprimorada para capturar corretamente os campos
+                const regex = /^(\S+)\s+(\S*)\s+(\S*)\s+(\d+)\s+(\S+)\s+(\S+)\s+(.{1,30}?)\s{2,}(\S*)\s{2,}(\S*)\s{2,}(\S*)$/;
+                const match = modifiedLine.match(regex);
+        
+                if (!match) {
+                    console.warn("Falha ao processar linha:", modifiedLine);
+                    return null;
+                }
+        
+                const [
+                    _,   // match[0] é a linha completa, descartamos
+                    channel, context, extension, priority, state, application, data, callerID, duration, uniqueID
+                ] = match;
+        
+                console.log("Linha bruta:", line);
+                console.log("Partes extraídas:", { channel, context, extension, priority, state, application, data, callerID, duration, uniqueID });
+        
+                return {
+                    channel,
+                    context: context || null,
+                    extension: extension || null,
+                    priority,
+                    state: getCallState(line),
+                    application,
+                    data: data.trim().replace("_Outgoing_Line", "Outgoing Line"),
+                    callerID: callerID || null,
+                    duration: duration || null,
+                    uniqueID: uniqueID || null
+                };
+            }).filter(Boolean);
+        
 
             // Mapeando os ramais com os dados extraídos
             const finalData = enrichedSippeers.map(sipper => {
                 const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
-                
+
                 return {
                     ...sipper,
                     call_state: activeChannel ? activeChannel.state : "Disponível",

@@ -64,6 +64,8 @@
                             <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
                             <strong>Ligação:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
                             <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
+                           <br>
+                            <strong>duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
                         </p>
                     </div>
                 </div>
@@ -99,7 +101,7 @@
         iconElement.textContent = "🔴";
     } else if (callState === "Tocando") {
         statusElement.textContent = "Tocando";
-        callInfoElement.textContent = `Ramal ${calling_to} recebendo ligação do ${calling_from}`;
+        callInfoElement.textContent = `${calling_to} => ${calling_from}`;
         card.classList.add("ringing", "shake");
         iconElement.textContent = "📳";
     } else if (callState === "Chamada em Andamento") {
@@ -109,7 +111,7 @@
         iconElement.textContent = "🔄";
     } else if (callState === "Discando") {
         statusElement.textContent = "Discando";
-        callInfoElement.textContent = `Ligação iniciada para ${calling_to}`;
+        callInfoElement.textContent = `${calling_from} => ${calling_to}`;
         card.classList.add("ring");
         iconElement.textContent = "📞";
     } else {
