@@ -244,7 +244,7 @@ function fetchQueueData(finalData) {
             }
 
             const queueData = res?.output || [];
-            console.log("Linha bruta:", queueData);
+            //console.log("Linha bruta:", queueData);
 
             // Processar e filtrar filas com callers ativos
             const processedQueueData = processQueueData(queueData);
@@ -300,19 +300,22 @@ function processQueueData(queueData) {
 
 // Função para extrair os dados do caller
 function extractCallerData(line) {
-    const regex = /^\s+(\d+)\.\s+SIP\/(\S+)\s+\(wait:\s+(\S+),\s+prio:\s+(\d+)\)/;
+    // Ajuste da expressão regular para lidar com variações
+    const regex = /^\s+(\d+)\.\s+SIP\/([^-\s]+)-?\S*\s+\(wait:\s+(\S+),\s+prio:\s+(\d+)\)/;
     const match = line.match(regex);
 
     if (match) {
         return {
             priority: match[1],
-            caller: match[2],
+            caller: match[2],  // Agora vai capturar apenas o que está entre SIP/ e -
             waitTime: match[3]
         };
     }
 
+    console.warn("Não foi possível extrair dados do caller:", line);  // Adicionando um log para verificar o erro
     return null;
 }
+
 
 // Inicia o loop com 1 execução por segundo
 fetchAndEmitUnifiedData();
