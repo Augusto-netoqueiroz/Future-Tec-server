@@ -199,7 +199,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                 ] = match;
         
                 console.log("Linha bruta:", line);
-                console.log("Partes extraídas:", { channel, context, extension, priority, state, application, data, callerID, duration, uniqueID });
+                //console.log("Partes extraídas:", { channel, context, extension, priority, state, application, data, callerID, duration, uniqueID });
         
                 return {
                     channel,
@@ -226,6 +226,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                     call_duration: activeChannel ? activeChannel.duration : null,
                     calling_from: activeChannel ? activeChannel.callerID : null, // Quem está ligando
                     calling_to: activeChannel ? activeChannel.extension : null, // Quem está recebendo
+                    uniqueID: activeChannel ? activeChannel.uniqueID : null // Garantir que o uniqueID esteja aqui
                 };
             });
 
@@ -256,6 +257,7 @@ function fetchQueueData(finalData) {
                 queueData: queueData
             });
 
+         
             // Espera 1 segundo antes de rodar novamente
             setTimeout(fetchAndEmitUnifiedData, 1000);
         }

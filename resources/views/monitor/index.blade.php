@@ -46,35 +46,53 @@
         atualizarFilas(data.queueData);
     });
 
-    function atualizarRamais(sippeers) {
-        const cardsContainer = document.querySelector("#sippers-cards");
-        cardsContainer.innerHTML = "";
+  function atualizarRamais(sippeers) {
+    const cardsContainer = document.querySelector("#sippers-cards");
+    cardsContainer.innerHTML = "";
 
-        sippeers.forEach((sipper) => {
-            const card = document.createElement("div");
-            card.classList.add("col-md-6", "mb-4");
-            card.id = `card-${sipper.name}`;
+    // Criar um mapa de chamadas ativas baseado no uniqueID
+    const chamadasAtivas = {};
 
-            card.innerHTML = `
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">${sipper.name}</h5>
-                        <span class="badge">${sipper.user_name || "Desconhecido"}</span>
-                        <p class="card-text mt-3">
-                            <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
-                            <strong>Ligação:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
-                            <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span>
-                           <br>
-                            <strong>duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
-                        </p>
-                    </div>
+    sippeers.forEach((sipper) => {
+        if (sipper.uniqueID) {
+            if (!chamadasAtivas[sipper.uniqueID]) {
+                chamadasAtivas[sipper.uniqueID] = [];
+            }
+            chamadasAtivas[sipper.uniqueID].push(sipper);
+        }
+    });
+
+    sippeers.forEach((sipper) => {
+        const card = document.createElement("div");
+        card.classList.add("col-md-6", "mb-4");
+        card.id = `card-${sipper.name}`;
+
+        let callingFrom = sipper.calling_from || sipper.name; // Origem sempre será o próprio ramal
+        let callingTo = sipper.calling_to || "Desconhecido"; // Destino
+
+        // Se callingTo estiver vazio ou for "Desconhecido", ajusta a ligação para garantir que callingFrom venha antes
+        const ligacao = callingTo !== "Desconhecido" ? `${callingFrom} => ${callingTo}` : `${callingFrom} => ${callingFrom}`;
+
+        card.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">${sipper.name}</h5>
+                    <span class="badge">${sipper.user_name || "Desconhecido"}</span>
+                    <p class="card-text mt-3">
+                        <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
+                        <strong>Ligação:</strong> <span class="call-info">${ligacao}</span><br>
+                        <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
+                        <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
+                    </p>
                 </div>
-            `;
-            cardsContainer.appendChild(card);
+            </div>
+        `;
 
-            atualizarEstadoDoCard(sipper.name, sipper.call_state, sipper.calling_from, sipper.calling_to);
-        });
-    }
+        cardsContainer.appendChild(card);
+        atualizarEstadoDoCard(sipper.name, sipper.call_state, callingFrom, callingTo);
+    });
+}
+
 
    function atualizarEstadoDoCard(extension, callState, calling_from, calling_to) {
     const cardContainer = document.querySelector(`#card-${extension}`);
