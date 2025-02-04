@@ -213,19 +213,28 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
             }).filter(Boolean);
 
             const finalData = enrichedSippeers.map(sipper => {
-                const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
+    const ramal = sipper.name.replace("SIP/", ""); // Remove "SIP/" se existir
+    const queueName = queueMapping[ramal] || null;
+    
+    // 🔹 Busca o canal ativo correspondente ao ramal
+    const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
 
-                return {
-                    ...sipper,
-                    call_state: activeChannel ? activeChannel.state : "Disponível",
-                    call_duration: activeChannel ? activeChannel.duration : null,
-                    calling_from: activeChannel ? sipper.name : null,
-                    calling_to: activeChannel ? activeChannel.extension : null,
-                    uniqueID: activeChannel ? activeChannel.uniqueID : null
-                };
-            });
+    console.log(`🔍 Verificando Ramal: ${sipper.name} (${ramal}), Fila: ${queueName}`);
+
+    return {
+        ...sipper,
+        call_state: activeChannel ? activeChannel.state : "Disponível",
+        call_duration: activeChannel ? activeChannel.duration : null,
+        calling_from: activeChannel ? sipper.name : null,
+        calling_to: activeChannel ? activeChannel.extension : null,
+        uniqueID: activeChannel ? activeChannel.uniqueID : null,
+        queueName: queueName  // 🔹 Adiciona a fila associada ao ramal, se existir
+    };
+});
+
 
             fetchQueueData(finalData);
+            fetchAndEmitQueueWithChannels(finalData);
         }
     );
 }
@@ -319,6 +328,51 @@ function extractCallerData(line) {
 
 // Inicia o loop com 1 execução por segundo
 fetchAndEmitUnifiedData();
+
+let queueMapping = {}; // Guarda ramais em ligação e suas filas
+
+
+
+function fetchAndEmitQueueWithChannels(callback) { // Adicionando callback
+    ami.action(
+        {
+            action: 'Command',
+            command: 'queue show'
+        },
+        (err, res) => {
+            if (err) {
+                console.error("Erro ao buscar dados das filas para associação com ramais:", err);
+                return;
+            }
+
+            const queueData = res?.output || [];
+            queueMapping = {}; // Resetar antes de preencher
+            let currentQueue = null;
+
+            queueData.forEach(line => {
+                const queueMatch = line.match(/^(\S+)\s+has\s+\d+\s+calls/);
+                if (queueMatch) {
+                    currentQueue = queueMatch[1]; // Nome da fila
+                }
+
+                if (currentQueue && line.includes("(in call)")) {
+                    const ramalMatch = line.match(/SIP\/(\d+)/);
+                    if (ramalMatch) {
+                        const ramal = ramalMatch[1];
+                        queueMapping[ramal] = currentQueue;
+                    }
+                }
+            });
+
+            console.log("📌 Mapeamento de Ramais em Ligação:", queueMapping);
+
+            // Verifica se callback é uma função antes de chamar
+            if (typeof callback === "function") {
+                callback();
+            }
+        }
+    );
+}
 
 // Manter a conexão ativa e desconectar do AMI corretamente
 process.on('SIGINT', () => {
