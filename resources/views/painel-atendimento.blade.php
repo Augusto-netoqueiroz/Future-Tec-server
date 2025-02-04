@@ -72,6 +72,7 @@
 
 <!-- Importação do Socket.IO -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+
 <script>
     const socket = io("http://93.127.212.237:4000");
 
@@ -79,37 +80,25 @@
         console.log("Recebido evento fetch-unified-data-response:", data);
         atualizarChamadas(data.sippeers, data.queueData);
     });
-
-   function atualizarChamadas(sippeers, queueData) {
-    const chamadasAtivasDiv = document.getElementById("chamadas-ativas");
-    let chamadas = [];
+ 
     
 
+    function atualizarChamadas(sippeers) {
+    const chamadasAtivasDiv = document.getElementById("chamadas-ativas");
+    let chamadas = [];
+
     if (sippeers && sippeers.length > 0) {
-    sippeers.forEach(call => {
-        if (call.user_name === usuarioAutenticado && call.call_state.trim().toLowerCase().includes("em chamada")) { 
-            chamadas.push({
-                usuario: call.user_name,
-                ramal: call.name,
-                numero: call.calling_to,
-                status: call.call_state,
-                fila: call.queueName ?? "Sem fila",
-                tempo: call.call_duration ?? "0s"
-            });
-        }
-    });
-}
-
-
-    if (queueData && queueData.length > 0) {
-        queueData.forEach(queue => {
-            queue.callers.forEach(caller => {
+        sippeers.forEach(call => {
+            if (call.user_name === usuarioAutenticado && call.call_state?.toLowerCase().includes("em chamada")) { 
                 chamadas.push({
-                    agente: queue.queueName,
-                    numero: caller.caller,
-                    status: `Na fila (${caller.waitTime})`
+                    usuario: call.user_name,
+                    ramal: call.name,
+                    numero: call.calling_to,
+                    status: call.call_state,
+                    fila: call.queueName,
+                    tempo: call.call_duration
                 });
-            });
+            }
         });
     }
 
@@ -123,9 +112,11 @@
     } else {
         chamadasAtivasDiv.innerHTML = "Nenhuma chamada ativa";
     }
-}
+    }
+
 
 </script>
+
 
 <script>
     const usuarioAutenticado = "{{ auth()->user()->name }}";
