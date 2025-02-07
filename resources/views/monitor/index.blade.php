@@ -36,6 +36,8 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     const socket = io("http://93.127.212.237:4000");
 
@@ -84,8 +86,8 @@
                     <h5 class="card-title">${sipper.name}</h5>
                     <span class="badge">${sipper.user_name || "Desconhecido"}</span>
                     <p class="card-text mt-3">
-                        <strong>Status:</strong> <span class="status">${sipper.call_state}</span><br>
-                        <strong>Ligação:</strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
+                        <strong></strong> <span class="status">${sipper.call_state}</span><br>
+                        <strong></strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
                         <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
                         <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
                     </p>
@@ -195,14 +197,15 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
     background-color: #1ea965;
     color: white;
     border-radius: 12px;
-    padding: 15px;
+    padding: 10px; /* Reduzindo o espaçamento interno */
     text-align: center;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    font-size: 1rem;
-    min-width: 220px;
-    max-width: 250px;
+    font-size: 0.875rem; /* Reduzindo o tamanho da fonte */
+    min-width: 200px; /* Diminuindo a largura mínima */
+    max-width: 300px; /* Diminuindo a largura máxima */
     position: relative;
 }
+
 
 .card-body {
     padding: 10px;
@@ -250,12 +253,19 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 }
 
 .call {
-    background-color: #dc3545 !important;
-}
+            background-color: #dc3545;
+            color: white;
+            animation: blink 1s infinite alternate;
+        }
 
 .ring {
     background-color: #007bff !important;
 }
+
+@keyframes blink {
+            from { opacity: 1; }
+            to { opacity: 0.9; }
+        }
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }

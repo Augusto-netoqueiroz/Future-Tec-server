@@ -125,16 +125,19 @@
 							</div>
 							
 							<!--Script para atualizar sessão-->
+							
+							<!--
 							@if(session('success'))
 							<div class="alert alert-success alert-dismissible fade show" role="alert">
 								{{ session('success') }}
 								<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 							</div>
+							-->
 							@endif
 							<!--Script para atualizar sessão-->
 						
 							<!-- Botão para selecionar a pausa -->
-									<button id="pauseToggleButton" class="btn btn-primary" style="margin-left: 810px;">Selecionar Pausa</button>
+									<button id="pauseToggleButton" class="btn btn-primary" style="margin-left: 900px;">Selecionar Pausa</button>
 									</div>
 									</div>
 							<!-- Botão para selecionar a pausa -->
@@ -374,7 +377,10 @@
 							<!--begin::Sidebar menu-->
 							<div id="#kt_app_sidebar_menu" data-kt-menu="true" data-kt-menu-expand="false" class="flex-column-fluid menu menu-sub-indention menu-column menu-rounded menu-active-bg mb-7">
 								<!--begin:Menu item-->
-								<div data-kt-menu-trigger="click" class="menu-item here show menu-accordion">
+								<div data-kt-menu-trigger="click" class="menu-item 
+								{{ request()->routeIs('dashboard.index', 'monitor.index', 'painel-atendimento') 
+					 			? 'here show' : '' }} menu-accordion">
+
 									<!--begin:Menu link-->
 									<span class="menu-link">
 										<span class="menu-icon">
@@ -439,7 +445,9 @@
 
 
 								<!-- Início do Menu Telefonia -->
-								<div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+								<div data-kt-menu-trigger="click" class="menu-item 
+								{{ request()->routeIs('filas.index', 'troncos.index', 'ramais.index' , 'rotas.index') 
+					 			? 'here show' : '' }} menu-accordion">
 									<!-- Título do Menu -->
 									<span class="menu-link">
 										<span class="menu-icon">
@@ -505,7 +513,9 @@
 
 
 								<!-- Início do Menu Campanhas -->
-								<div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+								<div data-kt-menu-trigger="click" class="menu-item 
+								{{ request()->routeIs('campaign.index', 'campaign.channels', 'report.index') 
+					 			? 'here show' : '' }} menu-accordion">
 									<!-- Título do Menu -->
 									<span class="menu-link">
 										<span class="menu-icon">
@@ -564,7 +574,9 @@
 							
 
 								<!-- Início do Menu Relatórios -->
-								<div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+								<div data-kt-menu-trigger="click" class="menu-item 
+								{{ request()->routeIs('login-report.index', 'relatorios.ligacoes', 'relatorio.pausas') 
+					 			? 'here show' : '' }} menu-accordion">
 									<!-- Título do Menu -->
 									<span class="menu-link">
 										<span class="menu-icon">
@@ -619,7 +631,9 @@
 										
 										
 								<!-- Início do Menu Administração -->
-								<div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+								<div data-kt-menu-trigger="click" class="menu-item 
+								{{ request()->routeIs('users.index', 'Pausas.inicio') 
+					 			? 'here show' : '' }} menu-accordion">
 									<!-- Título do Menu -->
 									<span class="menu-link">
 										<span class="menu-icon">
