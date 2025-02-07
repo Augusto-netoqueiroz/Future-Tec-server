@@ -201,35 +201,32 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 .card {
     background-color: #1ea965;
     color: white;
-    border-radius: 12px;
-    padding: 10px; /* Reduzindo o espaçamento interno */
+    border-radius: 10px;
+    padding: 3px; /* Reduzindo ainda mais o espaçamento interno */
     text-align: center;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    font-size: 0.875rem; /* Reduzindo o tamanho da fonte */
-    min-width: 200px; /* Diminuindo a largura mínima */
-    max-width: 300px; /* Diminuindo a largura máxima */
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.15);
+    font-size: 0.75rem; /* Diminuindo a fonte */
+    min-width: 250px; /* Reduzindo a largura mínima */
+    max-width: 250px; /* Diminuindo a largura máxima */
     position: relative;
 }
 
-
 .card-body {
-    padding: 10px;
+    padding: 5px; /* Reduzindo o espaçamento interno */
 }
 
 .card-title {
-    font-size: 1.2rem;
-    font-weight: bold;
+    font-size: 1rem; /* Diminuindo o título */
 }
 
 .card .status {
-    font-weight: bold;
-    display: block;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 .call-info {
-    font-size: 0.85rem;
+    font-size: 0.75rem; /* Reduzindo informações da chamada */
 }
+
 
 .badge {
     position: absolute;

@@ -50,6 +50,39 @@
 	<!--Script para autenticar a rota-->
 
 	@endif
+
+<style>
+.status-box {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+    max-width: 180px;
+    width: 100%;
+}
+
+/* Garante que o botão e os status não fiquem muito grandes no mobile */
+@media (max-width: 768px) {
+    .d-flex {
+        flex-direction: column !important; /* Força a exibição em coluna */
+        align-items: center !important;
+    }
+
+    #pauseToggleButton {
+        width: 100%; /* Faz o botão ocupar a largura máxima no mobile */
+        max-width: 300px; /* Define um tamanho máximo para não ficar exagerado */
+    }
+
+    #statusContainer {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+</style>
+
 	<!--begin::Body-->
 	<body id="kt_app_body" data-kt-app-header-fixed="true" data-kt-app-header-fixed-mobile="true" data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-hoverable="true" data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true" data-kt-app-toolbar-enabled="true" data-kt-app-aside-enabled="true" data-kt-app-aside-fixed="true" data-kt-app-aside-push-toolbar="true" data-kt-app-aside-push-footer="true" class="app-default">
 		<!--begin::Theme mode setup on page load-->
@@ -91,7 +124,7 @@
 						
 						<!--begin::Navbar-->
 						<div class="app-navbar flex-grow-1 justify-content-end" id="kt_app_header_navbar">
-							<div class="app-navbar-item d-flex align-items-stretch flex-lg-grow-1 me-2 me-lg-0">
+						<div class="app-navbar-item d-flex align-items-stretch me-2 me-lg-0">
 								<!--begin::Search-->
 								<div id="kt_header_search" class="header-search d-flex align-items-center w-lg-350px" data-kt-search-keypress="true" data-kt-search-min-length="2" data-kt-search-enter="enter" data-kt-search-layout="menu" data-kt-search-responsive="true" data-kt-menu-trigger="auto" data-kt-menu-permanent="true" data-kt-menu-placement="bottom-start">
 									<!--begin::Tablet and mobile search toggle-->
@@ -137,7 +170,9 @@
 							<!--Script para atualizar sessão-->
 						
 							<!-- Botão para selecionar a pausa -->
-									<button id="pauseToggleButton" class="btn btn-primary" style="margin-left: 900px;">Selecionar Pausa</button>
+							<div class="d-flex justify-content-center justify-content-lg-end">
+								<button id="pauseToggleButton" class="btn btn-primary">Selecionar Pausa</button>
+							</div>
 									</div>
 									</div>
 							<!-- Botão para selecionar a pausa -->

@@ -49740,6 +49740,15 @@ body,
   }
 }
 
+@media (max-width: 768px) {
+  .menu-title {
+      font-size: 14px;
+  }
+  .app-sidebar {
+      width: 100%;
+  }
+}
+
 /* Estilo para o item de lista selecionado */
 .list-group-item.active {
   background-color: #007bff;
