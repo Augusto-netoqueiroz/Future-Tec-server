@@ -80,20 +80,25 @@
             }
         }
 
-        card.innerHTML = `
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">${sipper.name}</h5>
-                    <span class="badge">${sipper.user_name || "Desconhecido"}</span>
-                    <p class="card-text mt-3">
-                        <strong></strong> <span class="status">${sipper.call_state}</span><br>
-                        <strong></strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
-                        <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
-                        <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
-                    </p>
-                </div>
-            </div>
-        `;
+        let badgeHTML = sipper.user_name && sipper.user_name !== "Desconhecido" 
+      ? `<span class="badge">${sipper.user_name}</span>` 
+      : ""; // Se for "Desconhecido", badgeHTML será vazio.
+
+  card.innerHTML = `
+      <div class="card">
+          <div class="card-body">
+              <h5 class="card-title">${sipper.name}</h5>
+              ${badgeHTML} <!-- Só exibe o badge se for diferente de "Desconhecido" -->
+              <p class="card-text mt-3">
+                  <strong></strong> <span class="status">${sipper.call_state}</span><br>
+                  <strong></strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
+                  <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
+                  <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
+              </p>
+          </div>
+      </div>
+  `;
+
 
         cardsContainer.appendChild(card);
         atualizarEstadoDoCard(sipper.name, sipper.call_state, callingFrom, callingTo);
