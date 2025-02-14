@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - NeWave One</title>
+    <title>FutureTec Server</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -92,8 +92,8 @@
 
     <!-- Rodapé -->
     <footer class="absolute bottom-4 text-center w-full text-gray-500 text-sm">
-        <p>Copyright &copy; 2024 <span class="text-blue-400">FutureTec telecom</span></p>
-        <p class="text-gray-600">v2.11.5</p>
+        <p>Copyright &copy; 2025 <span class="text-blue-400">FutureTec telecom</span></p>
+        <p class="text-gray-600">v1.0</p>
     </footer>
 </body>
 </html>

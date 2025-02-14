@@ -107,8 +107,8 @@
 							<!--end::Sidebar mobile toggle-->
 							<!--begin::Logo-->
 							<a href="{{ route('home') }}" class="app-sidebar-logo">
-								<img alt="Logo" src="assets/media/logos/default.svg" class="h-30px theme-light-show" />
-								<img alt="Logo" src="assets/media/logos/default-dark.svg" class="h-30px theme-dark-show" />
+								<img alt="Logo" src="assets/media/logos/default.svg" class="h-100px theme-light-show" />
+								<img alt="Logo" src="assets/media/logos/default-dark.svg" class="h-100px theme-dark-show" />
 							</a>
 							<!--end::Logo-->
 							<!--begin::Sidebar toggle-->
@@ -555,7 +555,7 @@
 									<span class="menu-link">
 										<span class="menu-icon">
 											<!-- Ícone do Menu -->
-											<i class="ki-duotone ki-gear">
+											<i class="ki-duotone ki-graph-4">
 											<span class="path1"></span>
 											<span class="path2"></span>
 											</i>

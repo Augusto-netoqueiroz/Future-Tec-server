@@ -219,7 +219,7 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
     // 🔹 Busca o canal ativo correspondente ao ramal
     const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
 
-    console.log(`🔍 Verificando Ramal: ${sipper.name} (${ramal}), Fila: ${queueName}`);
+    //console.log(`🔍 Verificando Ramal: ${sipper.name} (${ramal}), Fila: ${queueName}`);
 
     return {
         ...sipper,
@@ -364,7 +364,7 @@ function fetchAndEmitQueueWithChannels(callback) { // Adicionando callback
                 }
             });
 
-            console.log("📌 Mapeamento de Ramais em Ligação:", queueMapping);
+            //console.log("📌 Mapeamento de Ramais em Ligação:", queueMapping);
 
             // Verifica se callback é uma função antes de chamar
             if (typeof callback === "function") {
