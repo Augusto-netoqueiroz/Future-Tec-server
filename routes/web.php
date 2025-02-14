@@ -20,7 +20,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PauseController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\Liguetalkcontroller;
-
+use App\Http\Controllers\GlpiController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -245,3 +245,8 @@ Route::get('/monitoramento', [MonitorController::class, 'index'])->name('monitor
 
 
 Route::get('/Liguetalk', [Liguetalkcontroller::class, 'index'])->name('Liguetalk.index');
+
+Route::post('/glpi/criarticket', [GlpiController::class, 'createTicket'])->name('glpi.createTicket');
+Route::get('/glpi/ticket/{id}', [GlpiController::class, 'getTicket']);
+Route::get('/glpi/tickets', [GlpiController::class, 'listTickets']);
+Route::get('/glpi/novo-ticket', [GlpiController::class, 'showCreateTicketForm'])->name('glpi.showCreateTicketForm');
