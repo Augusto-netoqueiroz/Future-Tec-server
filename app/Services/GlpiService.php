@@ -48,18 +48,21 @@ class GlpiService {
     return $data;
 }
 
-public function createTicket($title, $description, $userId, $entityId) {
+public function createTicket($title, $description, $user_id, $entities_id, $category_id, $status) {
     $response = $this->client->post('Ticket', [
         'headers' => [
             'App-Token'    => env('GLPI_APP_TOKEN'),
             'Session-Token' => $this->sessionToken,
+            'Content-Type'  => 'application/json'
         ],
         'json' => [
             'input' => [
-                'name' => $title,
-                'content' => $description,
-                'users_id_recipient' => $userId,
-                'entities_id' => $entityId
+                'name'               => $title,
+                'content'            => $description,
+                'users_id_recipient' => $user_id,
+                'entities_id'        => $entities_id,
+                'itilcategories_id'  => $category_id,
+                'status'             => $status // Enviando o status correto
             ]
         ]
     ]);
@@ -71,8 +74,9 @@ public function createTicket($title, $description, $userId, $entityId) {
 
 
 
-    // Buscar um chamado pelo ID
-    public function getTicket($ticketId)
+
+
+public function getTickets($userId = null, $entityId = null, $startDate = null, $endDate = null)
 {
     $sessionToken = session('glpi_session_token');
 
@@ -80,14 +84,126 @@ public function createTicket($title, $description, $userId, $entityId) {
         throw new \Exception('Session Token não encontrado. Inicie a sessão primeiro.');
     }
 
+    // Parâmetros base
+    $params = [
+        'range' => '0-999', // Limite de resultados
+        'sort'  => 'date_mod', // Ordenar por data de modificação
+        'order' => 'DESC', // Ordem decrescente
+        'forcedisplay' => 'id,name,users_id_recipient,entities_id,status,date_creation'
+    ];
+
+    // Adicionando filtros
+    $filters = [];
+
+    if (!empty($userId)) {
+        $filters[] = "users_id_recipient=$userId";
+    }
+    if (!empty($entityId)) {
+        $filters[] = "entities_id=$entityId";
+    }
+    if (!empty($startDate)) {
+        $filters[] = "date_mod[>]=" . date('Y-m-d', strtotime($startDate));
+    }
+    if (!empty($endDate)) {
+        $filters[] = "date_mod[<]=" . date('Y-m-d', strtotime($endDate));
+    }
+
+    if (!empty($filters)) {
+        $params['_filters'] = implode('&', $filters);
+    }
+
+    // Montando a URL com query string
+    $url = env('GLPI_URL') . '/Ticket?' . http_build_query($params);
+
+    // Fazendo a requisição
+    $response = Http::withHeaders([
+        'App-Token'     => env('GLPI_APP_TOKEN'),
+        'Authorization' => 'user_token ' . env('GLPI_USER_TOKEN'),
+        'Session-Token' => $sessionToken,
+    ])->get($url);
+
+    if ($response->failed()) {
+        throw new \Exception('Erro ao buscar tickets: ' . $response->body());
+    }
+
+    return $response->json();
+}
+
+
+
+public function filterTickets($userId = null, $entityId = null, $startDate = null, $endDate = null)
+{
+    $sessionToken = session('glpi_session_token');
+
+    if (!$sessionToken) {
+        throw new \Exception('Session Token não encontrado. Inicie a sessão primeiro.');
+    }
+
+    $params = [
+        'range' => '0-499', // Limite de resultados
+        
+    ];
+
+
+    // Construindo os critérios de filtragem
+    $criteria = [];
+
+    if (!empty($userId)) {
+        $criteria[] = [
+            'field' => 4, // Campo para usuário requerente
+            'searchtype' => 'equals',
+            'value' => $userId,
+        ];
+    }
+
+    if (!empty($entityId)) {
+        $criteria[] = [
+            'field' => 80, // Campo para entidade
+            'searchtype' => 'equals',
+            'value' => $entityId,
+        ];
+    }
+
+    if (!empty($startDate) && !empty($endDate)) {
+        $criteria[] = [
+            'field' => 15, // Campo para data da criação
+            'searchtype' => 'morethan',
+            'value' => date('Y-m-d', strtotime($startDate)) . " 00:00:00",
+        ];
+        $criteria[] = [
+            'field' => 15,
+            'searchtype' => 'lessthan',
+            'value' => date('Y-m-d', strtotime($endDate)) . " 23:59:59",
+        ];
+    }
+
+   
+
+
+    // Montando a URL correta para a API do GLPI
+    $url = env('GLPI_URL') . 'search/Ticket';
+
+    // Fazendo a requisição HTTP usando POST para enviar os filtros no corpo
     $response = Http::withHeaders([
         'App-Token'    => env('GLPI_APP_TOKEN'),
         'Authorization' => 'user_token ' . env('GLPI_USER_TOKEN'),
         'Session-Token' => $sessionToken,
-    ])->get(env('GLPI_URL') . "/Ticket/$ticketId");
+        'Content-Type'  => 'application/json',
+    ])->post($url, [
+        'criteria' => $criteria,
+        'range' => '0-100',
+        'order' => 'DESC',
+        'sort' => '15',
+    ]);
+
+    if ($response->failed()) {
+        throw new \Exception('Erro ao buscar tickets filtrados: ' . $response->body());
+    }
 
     return $response->json();
 }
+
+
 
 
 public function getEntities() {
@@ -137,6 +253,18 @@ public function associateUserToTicket($ticketId, $userId) {
     return json_decode($response->getBody(), true);
 }
 
+
+
+public function getCategories() {
+    $response = $this->client->get('ITILCategory', [
+        'headers' => [
+            'App-Token'    => env('GLPI_APP_TOKEN'),
+            'Session-Token' => $this->sessionToken,
+        ],
+    ]);
+
+    return json_decode($response->getBody(), true);
+}
 
 
 }

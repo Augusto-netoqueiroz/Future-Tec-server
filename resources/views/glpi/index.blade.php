@@ -3,56 +3,104 @@
 @section('title', 'Criar Ticket')
 
 @section('content')
- 
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Ticket - GLPI</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        form { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
-        input, textarea, select { width: 100%; padding: 10px; margin: 5px 0; }
-        button { background: #28a745; color: white; padding: 10px; border: none; cursor: pointer; }
-        button:hover { background: #218838; }
-    </style>
 
-    <h2 style="text-align: center;">Criar um Novo Ticket</h2>
 
-    @if(session('success'))
-    <div style="color: green;">{{ session('success') }}</div>
-@endif
+<div class="container mt-5 d-flex justify-content-center align-items-center vh-100">
 
-@if(session('error'))
-    <div style="color: red;">{{ session('error') }}</div>
-@endif
+    <div class="card shadow-lg p-4" style="width: 500px; border-radius: 12px;">
+        
+        {{-- Título --}}
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-primary"><i class="fas fa-ticket-alt"></i> Criar Novo Ticket</h3>
+        </div>
 
-<form action="{{ route('glpi.createTicket') }}" method="POST">
-    @csrf
-    <label for="title">Título:</label>
-    <input type="text" name="title" required>
+        {{-- Exibir mensagens de sucesso ou erro --}}
+        @if(session('success'))
+            <div class="alert alert-success text-center">{{ session('success') }}</div>
+        @endif
 
-    <label for="description">Descrição:</label>
-    <textarea name="description" required></textarea>
+        @if(session('error'))
+            <div class="alert alert-danger text-center">{{ session('error') }}</div>
+        @endif
 
-    <label for="user_id">ID do Usuário:</label>
-    <select name="user_id" class="form-control" required>
-                <option value="">Selecione um usuário</option>
-                @foreach($users as $user)
-                    <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
-                @endforeach
-            </select>
+        {{-- Formulário --}}
+        <form action="{{ route('glpi.createTicket') }}" method="POST">
+            @csrf
 
-  
-    <label for="entities_id">Entidade:</label>
-    <select name="entities_id" class="form-control" required>
-        <option value="">Selecione a Entidade</option>
-        @foreach($entities as $entity)
-            <option value="{{ $entity['id'] }}">{{ $entity['name'] }}</option>
-        @endforeach
-    </select>
+            {{-- Título --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Título do Chamado:</label>
+                <input type="text" name="title" class="form-control rounded-3" required>
+            </div>
 
-    <button type="submit">Criar Ticket</button>
-</form>
+            {{-- Descrição --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Descrição:</label>
+                <textarea name="description" class="form-control rounded-3" rows="3" required></textarea>
+            </div>
+
+            {{-- Categoria --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Categoria:</label>
+                <select name="category_id" class="form-select rounded-3" required>
+                    <option value="">Selecione uma categoria</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category['id'] }}">{{ $category['completename'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Status --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Status do Chamado:</label>
+                    <div class="d-flex gap-3">
+                        <input type="radio" class="btn-check" name="status" id="status_pendente" value="pendente" required>
+                        <label class="btn btn-outline-warning fw-bold" for="status_pendente">
+                            <i class="fas fa-exclamation-circle"></i> Pendente
+                        </label>
+
+                        <input type="radio" class="btn-check" name="status" id="status_solucionado" value="solucionado">
+                        <label class="btn btn-outline-success fw-bold" for="status_solucionado">
+                            <i class="fas fa-check-circle"></i> Solucionado
+                        </label>
+                    </div>
+                </div>
+
+
+            {{-- Usuário --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Usuário Responsável:</label>
+                <select name="user_id" class="form-select rounded-3" required>
+                    <option value="">Selecione um usuário</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Entidade --}}
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Entidade:</label>
+                <select name="entities_id" class="form-select rounded-3" required>
+                    <option value="">Selecione uma Entidade</option>
+                    @foreach($entities as $entity)
+                        <option value="{{ $entity['id'] }}">{{ $entity['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Botão de Envio --}}
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="fas fa-paper-plane"></i> Criar Ticket
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
 
 
 @endsection

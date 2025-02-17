@@ -608,6 +608,54 @@
 								<!-- Fim do Menu Campanhas -->		
 							
 
+											
+								<!-- Início do Menu Tickets -->
+								<div data-kt-menu-trigger="click" class="menu-item 
+								{{ request()->routeIs('glpi.showCreateTicketForm' , 'glpi.tickets') 
+					 			? 'here show' : '' }} menu-accordion">
+									<!-- Título do Menu -->
+									<span class="menu-link">
+										<span class="menu-icon">
+											<!-- Ícone do Menu -->
+											<i class="ki-duotone ki-some-files fs-1">
+												<span class="path1"></span>
+												<span class="path2"></span>
+											</i>
+										</span>
+										<span class="menu-title">Tickets</span>
+										<span class="menu-arrow"></span>
+									</span>
+
+
+									<!-- Opções do Menu -->
+									<div class="menu-sub menu-sub-accordion">
+										<!--begin:Menu link-->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('glpi.showCreateTicketForm') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Criar</span>
+											</a>
+										</div>
+										</div>
+
+										<!-- Opções do Menu -->
+										<div class="menu-sub menu-sub-accordion">
+										<!--begin:Menu link-->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('glpi.tickets') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Tickets</span>
+											</a>
+										</div>
+										</div>
+
+
+										</div>
+
 								<!-- Início do Menu Relatórios -->
 								<div data-kt-menu-trigger="click" class="menu-item 
 								{{ request()->routeIs('login-report.index', 'relatorios.ligacoes', 'relatorio.pausas') 

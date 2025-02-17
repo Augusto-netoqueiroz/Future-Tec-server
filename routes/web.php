@@ -248,5 +248,7 @@ Route::get('/Liguetalk', [Liguetalkcontroller::class, 'index'])->name('Liguetalk
 
 Route::post('/glpi/criarticket', [GlpiController::class, 'createTicket'])->name('glpi.createTicket');
 Route::get('/glpi/ticket/{id}', [GlpiController::class, 'getTicket']);
-Route::get('/glpi/tickets', [GlpiController::class, 'listTickets']);
 Route::get('/glpi/novo-ticket', [GlpiController::class, 'showCreateTicketForm'])->name('glpi.showCreateTicketForm');
+Route::get('/glpi/tickets', [GlpiController::class, 'index'])->name('glpi.tickets');
+
+Route::get('/glpi/tickets/filter', [GLPIController::class, 'filterTickets'])->name('glpi.tickets.filter');
