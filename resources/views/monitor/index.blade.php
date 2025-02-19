@@ -5,9 +5,50 @@
 @section('content')
 <div class="container mt-5">
     <div class="row">
-        <!-- Seção de Ramais -->
-        <div class="col-md-8">
-            <h1 class="text-primary">Monitor de Ramais e Ligações</h1>
+
+    <!-- Seção de Ramais -->
+    <div class="col-md-8">
+                <h1 class="text-primary">Monitor de Ramais e Ligações</h1>
+
+
+                <!-- Cards Fixos no Topo -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card fixed-card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ligações Recebidas</h5>
+                    <h3>{{ $dadosChamadas->total_recebidas ?? 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card fixed-card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ligações Atendidas</h5>
+                    <h3>{{ $dadosChamadas->total_atendidas ?? 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card fixed-card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ligações Perdidas</h5>
+                    <h3>{{ $dadosChamadas->total_perdidas ?? 0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+<div>
+    <br>
+</br>
+
+</div>
+
+
+        
             <!-- Container para os cards -->
             <div class="row" id="sippers-cards">
                 <!-- Os cards serão adicionados aqui via JavaScript -->

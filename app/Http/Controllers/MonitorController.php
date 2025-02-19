@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\DB;
+
 class MonitorController extends Controller
 {
     /**
@@ -12,13 +14,21 @@ class MonitorController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+ 
 
      public function index()
-    {
-        return view('monitor.index');
-    }
-
-
+     {
+         // Buscar os dados agregados da tabela queue_log apenas para o dia atual
+         $dadosChamadas = DB::table('queue_log')
+             ->whereDate('time', today())
+             ->selectRaw("COUNT(CASE WHEN event = 'ENTERQUEUE' THEN 1 END) AS total_recebidas,
+                          COUNT(CASE WHEN event = 'CONNECT' THEN 1 END) AS total_atendidas,
+                          COUNT(CASE WHEN event = 'ABANDON' OR event = 'EXITWITHTIMEOUT' THEN 1 END) AS total_perdidas")
+             ->first();
+     
+         return view('monitor.index', compact('dadosChamadas'));
+     }
+     
 
 
     public function saveSippersData(Request $request)
