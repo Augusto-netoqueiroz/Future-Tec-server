@@ -201,5 +201,95 @@ class GlpiController extends Controller {
     }
 
 
+    public function updateTicket(Request $request, $id)
+    {
+        $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string',
+            'status'      => 'required|in:1,2,3,4,5,6',
+            'category'    => 'nullable|integer',
+            'user'        => 'nullable|integer',
+            'entity'      => 'nullable|integer'
+        ]);
+    
+        try {
+            $ticketData = [
+                'name'              => $request->input('title'),
+                'content'           => $request->input('description'),
+                'status'            => (int) $request->input('status'),
+                'itilcategories_id' => (int) $request->input('category'),
+                'users_id_recipient'=> (int) $request->input('user'),
+                'entities_id'       => (int) $request->input('entity')
+            ];
+    
+            $updatedTicket = $this->glpiService->updateTicket($id, $ticketData); // ✅ Passa array corretamente
+    
+            return redirect()->route('glpi.tickets', $id)->with('success', 'Ticket atualizado com sucesso!');
+    
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao atualizar ticket: ' . $e->getMessage());
+        }
+    }
+    
+    
+    
+
+
+
+    public function deleteTicket($id) {
+        try {
+            $this->glpiService->deleteTicket($id);
+            return redirect()->route('glpi.tickets')->with('success', 'Ticket deletado com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao deletar ticket: ' . $e->getMessage());
+        }
+    }
+
+    
+    public function edit($id)
+{
+    try {
+        $ticket = $this->glpiService->getSingleTicket($id);
+        $entities = $this->glpiService->getEntities();
+        $users = $this->glpiService->getUsers();
+        $categories = $this->glpiService->getCategories();
+
+        if (!$ticket) {
+            return redirect()->back()->with('error', 'Ticket não encontrado.');
+        }
+
+        // 🔹 Mapeamento dos status
+        $statusMap = [
+            1 => 'Novo',
+            2 => 'Em andamento (atribuído)',
+            3 => 'Em andamento (planejado)',
+            4 => 'Pendente',
+            5 => 'Solucionado',
+            6 => 'Fechado'
+        ];
+        $ticket['status_name'] = $statusMap[$ticket['status']] ?? 'Desconhecido';
+
+        // 🔹 Encontrar o nome da entidade
+        $entity = collect($entities)->firstWhere('id', $ticket['entities_id']);
+        $ticket['entity_name'] = $entity['name'] ?? 'Desconhecida';
+
+        // 🔹 Encontrar o nome do usuário responsável
+        $user = collect($users)->firstWhere('id', $ticket['users_id_recipient']);
+        $ticket['user_name'] = $user['name'] ?? 'Não atribuído';
+
+        // 🔹 Encontrar o nome da categoria
+        $category = collect($categories)->firstWhere('id', $ticket['itilcategories_id']);
+        $ticket['category_name'] = $category['name'] ?? 'Sem categoria';
+
+        return view('glpi.edit', compact('ticket', 'categories', 'entities', 'users'));
+
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Erro ao carregar ticket: ' . $e->getMessage());
+    }
+}
+
+    
+
+    
     
 }

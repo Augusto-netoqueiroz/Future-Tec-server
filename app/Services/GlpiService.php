@@ -4,6 +4,7 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 
 class GlpiService {
@@ -205,21 +206,74 @@ public function filterTickets($userId = null, $entityId = null, $startDate = nul
 
 
 
+public function updateTicket($id, array $data)
+{
+    try {
+        // A API espera os dados dentro de um array "input"
+        $payload = [
+            'input' => array_merge(['id' => (int) $id], $data)
+        ];
 
-public function getEntities() {
+        $response = $this->client->put("Ticket/$id", [
+            'headers' => [
+                'App-Token'    => env('GLPI_APP_TOKEN'),
+                'Session-Token' => $this->sessionToken,
+                'Content-Type'  => 'application/json'
+            ],
+            'json' => $payload // ✅ Envia os dados dentro de "input"
+        ]);
+
+        return json_decode($response->getBody()->getContents(), true);
+
+    } catch (\Exception $e) {
+        Log::error("Erro ao atualizar ticket ID $id: " . $e->getMessage());
+        return null;
+    }
+}
+
+
+
+
+
+
+public function deleteTicket($ticketId) {
+    $sessionToken = session('glpi_session_token');
+
+    $response = Http::withHeaders([
+        'App-Token'    => env('GLPI_APP_TOKEN'),
+        'Authorization' => 'user_token ' . env('GLPI_USER_TOKEN'),
+        'Session-Token' => $sessionToken,
+    ])->delete(env('GLPI_URL') . "Ticket/$ticketId");
+
+    if ($response->failed()) {
+        throw new \Exception('Erro ao deletar ticket: ' . $response->body());
+    }
+
+    return $response->json();
+}
+
+
+
+public function getEntities($range = '0-100') {
     $response = $this->client->get('Entity', [
         'headers' => [
-            'App-Token'    => env('GLPI_APP_TOKEN'),
+            'App-Token'     => env('GLPI_APP_TOKEN'),
             'Session-Token' => $this->sessionToken,
         ],
+        'query' => [
+            'range' => $range
+        ]
     ]);
 
     return json_decode($response->getBody(), true);
 }
 
 
-public function getUsers() {
-    $response = $this->client->get('User', [
+public function getUsers()
+{
+    $url = 'User?range=0-100&criteria%5B0%5D%5Bfield%5D=8&criteria%5B0%5D%5Bsearchtype%5D=equals&criteria%5B0%5D%5Bvalue%5D=1';
+
+    $response = $this->client->get($url, [
         'headers' => [
             'App-Token'    => env('GLPI_APP_TOKEN'),
             'Session-Token' => $this->sessionToken,
@@ -264,6 +318,32 @@ public function getCategories() {
     ]);
 
     return json_decode($response->getBody(), true);
+}
+
+
+public function getSingleTicket($id)
+{
+    try {
+        // Fazendo a requisição GET para buscar o ticket
+        $response = $this->client->get("Ticket/$id", [
+            'headers' => [
+                'App-Token'    => env('GLPI_APP_TOKEN'),
+                'Session-Token' => $this->sessionToken,
+            ],
+        ]);
+
+        // Converte a resposta para um array associativo
+        $ticket = json_decode($response->getBody()->getContents(), true);
+
+        if (!$ticket || !isset($ticket['id'])) {
+            return null; // Retorna nulo se o ticket não existir
+        }
+
+        return $ticket;
+    } catch (\Exception $e) {
+        Log::error("Erro ao buscar ticket ID $id: " . $e->getMessage());
+        return null;
+    }
 }
 
 
