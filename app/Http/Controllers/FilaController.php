@@ -17,6 +17,7 @@ class FilaController extends Controller
         }
     
         $empresa_id = Auth::user()->empresa_id;
+        $empresa_nome = Auth::user()->empresa_nome;
     
         $filas = DB::table('queues')
             ->where('empresa_id', $empresa_id)
@@ -31,25 +32,39 @@ class FilaController extends Controller
         return view('filas.create');
     }
 
-    // Salva uma nova fila no banco de dados
     public function store(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|integer|unique:queues,id',
-            'name' => 'required|string|max:255',
-            'strategy' => 'required|string|max:255',
-            'timeout' => 'required|integer',
-        ]);
+{
+    $request->validate([
+        'id' => 'required|integer|unique:queues,id',
+        'name' => 'required|string|max:255',
+        'strategy' => 'required|string|max:255',
+        'timeout' => 'required|integer',
+        'musiconhold' => 'nullable|string|max:255',
+        'announce_frequency' => 'nullable|integer',
+        'servicelevel' => 'nullable|integer',
+        'wrapuptime' => 'nullable|integer',
+        'joinempty' => 'nullable|string|in:yes,no',
+        'leavewhenempty' => 'nullable|string|in:yes,no',
+        'ringinuse' => 'nullable|boolean',
+    ]);
 
-        DB::table('queues')->insert([
-            'id' => $request->id,
-            'name' => $request->name,
-            'strategy' => $request->strategy,
-            'timeout' => $request->timeout,
-        ]);
+    DB::table('queues')->insert([
+        'id' => $request->id,
+        'name' => $request->name,
+        'strategy' => $request->strategy,
+        'timeout' => $request->timeout,
+        'musiconhold' => $request->musiconhold,
+        'announce_frequency' => $request->announce_frequency,
+        'servicelevel' => $request->servicelevel,
+        'wrapuptime' => $request->wrapuptime,
+        'joinempty' => $request->joinempty,
+        'leavewhenempty' => $request->leavewhenempty,
+        'ringinuse' => $request->ringinuse,
+        'empresa_id' => Auth::user()->empresa_id, // Adiciona o ID da empresa do usuário logado
+    ]);
 
-        return redirect()->route('filas.index')->with('success', 'Fila criada com sucesso!');
-    }
+    return redirect()->route('filas.index')->with('success', 'Fila criada com sucesso!');
+}
 
 
 // Exibe o formulário de edição de uma fila

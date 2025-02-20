@@ -35,66 +35,69 @@
     <div class="card card-flush">
         <div class="card-body pt-0">
             <table class="table align-middle table-row-dashed fs-6 gy-4" id="userTable">
-                <thead class="table-light text-start fw-bold">
-                    <tr>
-                        <th>Avatar</th>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Email</th>
-                        <th>Cargo</th>
-                        <th>Estado</th>
-                        <th>IP</th>
-                        <th class="text-end">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($users as $user)
-                        <tr>
-                            <td>
-                                @if ($user->avatar)
-                                    <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                                @else
-                                    <span class="text-muted">Sem Avatar</span>
-                                @endif
-                            </td>
-                            <td>{{ $user->id }}</td>
-                            <td>{{ $user->name }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td>{{ $user->cargo }}</td>
-                            <td>
-                                <span class="badge {{ $user->is_online ? 'badge-light-success' : 'badge-light-danger' }}">
-                                    {{ $user->is_online ? 'Online' : 'Offline' }}
-                                </span>
-                            </td>
-                            <td>{{ $user->ip_address ?? 'N/A' }}</td>
-                            <td class="text-end">
-                                {{-- Botão Editar --}}
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning me-2">
-                                    <i class="ki-duotone ki-pencil me-1"></i>Editar
-                                </a>
+            <thead class="table-light text-start fw-bold">
+    <tr>
+        <th>Avatar</th>
+        <th>ID</th>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Cargo</th>
+        <th>Empresa</th> <!-- Adicionado a coluna de Empresa -->
+        <th>Estado</th>
+        <th>IP</th>
+        <th class="text-end">Ações</th>
+    </tr>
+</thead>
+<tbody>
+    @foreach ($users as $user)
+        <tr>
+            <td>
+                @if ($user->avatar)
+                    <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                @else
+                    <span class="text-muted">Sem Avatar</span>
+                @endif
+            </td>
+            <td>{{ $user->id }}</td>
+            <td>{{ $user->name }}</td>
+            <td>{{ $user->email }}</td>
+            <td>{{ $user->cargo }}</td>
+            <td>{{ $user->empresa_id }}</td> <!-- Exibir o ID da Empresa -->
+            <td>
+                <span class="badge {{ $user->is_online ? 'badge-light-success' : 'badge-light-danger' }}">
+                    {{ $user->is_online ? 'Online' : 'Offline' }}
+                </span>
+            </td>
+            <td>{{ $user->ip_address ?? 'N/A' }}</td>
+            <td class="text-end">
+                {{-- Botão Editar --}}
+                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning me-2">
+                    <i class="ki-duotone ki-pencil me-1"></i>Editar
+                </a>
 
-                                {{-- Botão Logout (caso online) --}}
-                                @if($user->is_online)
-                                    <form action="{{ route('users.logoutUser', $user->id) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-secondary me-2" onclick="return confirm('Tem certeza que deseja derrubar a sessão deste usuário?');">
-                                            <i class="ki-duotone ki-logout me-1"></i>Logout
-                                        </button>
-                                    </form>
-                                @endif
+                {{-- Botão Logout (caso online) --}}
+                @if($user->is_online)
+                    <form action="{{ route('users.logoutUser', $user->id) }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-secondary me-2" onclick="return confirm('Tem certeza que deseja derrubar a sessão deste usuário?');">
+                            <i class="ki-duotone ki-logout me-1"></i>Logout
+                        </button>
+                    </form>
+                @endif
 
-                                {{-- Botão Deletar --}}
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este usuário?');">
-                                        <i class="ki-duotone ki-trash me-1"></i>Deletar
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
+                {{-- Botão Deletar --}}
+                <form action="{{ route('users.destroy', $user->id) }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este usuário?');">
+                        <i class="ki-duotone ki-trash me-1"></i>Deletar
+                    </button>
+                </form>
+            </td>
+        </tr>
+    @endforeach
+</tbody>
+
             </table>
         </div>
     </div>

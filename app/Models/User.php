@@ -26,6 +26,7 @@ class User extends Authenticatable
         'pause',  // Certifique-se de que o campo 'pause' está presente no $fillable
         'current_pause_log_id',
         'empresa_id',  // Não se esqueça de adicionar o campo empresa_id aqui
+        'empresa_nome',
     ];
 
     /**

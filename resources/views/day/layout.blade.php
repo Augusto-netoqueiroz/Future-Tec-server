@@ -715,7 +715,7 @@
 										
 								<!-- Início do Menu Administração -->
 								<div data-kt-menu-trigger="click" class="menu-item 
-								{{ request()->routeIs('users.index', 'Pausas.inicio') 
+								{{ request()->routeIs('users.index', 'Pausas.inicio','empresas.create') 
 					 			? 'here show' : '' }} menu-accordion">
 									<!-- Título do Menu -->
 									<span class="menu-link">
@@ -752,6 +752,17 @@
 												<span class="menu-title">Pausas</span>
 											</a>
 										</div>
+
+										<!-- inicio submenu Empresas -->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('empresas.create') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Criar empresa</span>
+											</a>
+										</div>
+
 									</div>
 								</div>
 								<!-- Fim do Menu Administração -->		

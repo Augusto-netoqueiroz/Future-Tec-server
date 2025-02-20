@@ -259,3 +259,9 @@ Route::get('/glpi/tickets/filter', [GLPIController::class, 'filterTickets'])->na
 Route::put('/tickets/{id}', [GlpiController::class, 'updateTicket'])->name('tickets.update');
 Route::delete('/tickets/{id}', [GlpiController::class, 'deleteTicket'])->name('tickets.delete');
 Route::get('/tickets/{id}/edit', [GlpiController::class, 'edit'])->name('tickets.edit');
+
+
+//Empresa controller
+
+Route::get('/empresas/create', [UserController::class, 'createEmpresa'])->name('empresas.create');
+Route::post('/empresas/store', [UserController::class, 'storeEmpresa'])->name('empresas.store');

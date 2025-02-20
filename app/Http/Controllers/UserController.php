@@ -204,17 +204,20 @@ class UserController extends Controller
 
     public function index()
     {
-        $users = User::all();
-
+        $user = auth()->user(); // Obtém o usuário autenticado
+    
+        $users = User::where('empresa_id', $user->empresa_id)->get(); // Filtra apenas os usuários da mesma empresa
+    
         $users->map(function ($user) {
             $session = DB::table('sessions')->where('user_id', $user->id)->first();
             $user->is_online = $session ? true : false;
             $user->ip_address = $session ? $session->ip_address : null;
             return $user;
         });
-
+    
         return view('users.index', compact('users'));
     }
+    
 
     public function create()
     {
@@ -230,22 +233,27 @@ class UserController extends Controller
             'cargo' => 'required|string|max:255',
             'avatar' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ]);
-
+    
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
         }
-
+    
+        $user = auth()->user(); // Obtém o usuário autenticado
+    
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'cargo' => $request->cargo,
             'avatar' => $avatarPath,
+            'empresa_id' => $user->empresa_id, 
+            'empresa_nome' => $user->empresa_nome,// Garante que o novo usuário pertence à mesma empresa
         ]);
-
+    
         return redirect()->route('users.index')->with('success', 'Usuário criado com sucesso!');
     }
+    
 
     public function edit($id)
     {
@@ -320,6 +328,28 @@ class UserController extends Controller
     return redirect()->back()->with('error', 'Pausa não encontrada.');
 }
     
+
+public function createEmpresa()
+{
+    return view('empresas.create');
+}
+
+public function storeEmpresa(Request $request)
+{
+    $request->validate([
+        'nome' => 'required|string|max:255',
+        'cnpj' => 'required|string|max:255|unique:empresas,cnpj',
+    ]);
+
+    DB::table('empresas')->insert([
+        'nome' => $request->nome,
+        'cnpj' => $request->cnpj,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return redirect()->route('empresas.create')->with('success', 'Empresa criada com sucesso!');
+}
 
 
 }

@@ -88,6 +88,13 @@
             </select>
         </div>
 
+        <div class="mb-3">
+        <label class="form-label">Empresa ID</label>
+        <input type="text" class="form-control" value="{{ Auth::user()->empresa_id }} - {{ Auth::user()->empresa_nome }}" disabled>
+        
+    
+    </div>
+
         <button type="submit" class="btn btn-primary">Salvar Fila</button>
         <a href="{{ route('filas.index') }}" class="btn btn-secondary">Cancelar</a>
     </form>
