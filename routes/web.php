@@ -21,6 +21,7 @@ use App\Http\Controllers\PauseController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\Liguetalkcontroller;
 use App\Http\Controllers\GlpiController;
+use \App\Http\Middleware\TesteMiddleware;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -241,6 +242,9 @@ Route::post('/save-sippers-data', [MonitorController::class, 'saveSippersData'])
 
 
 Route::get('/monitoramento', [MonitorController::class, 'index'])->name('monitor.index');
+
+Route::get('/extrato-chamadas/{tipo}', [MonitorController::class, 'getExtratoChamadas']);
+
 
 
 

@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 
 class PainelAtendimentoController extends Controller
 {
+
+
+    
     // Exibe a página do painel de atendimento com os ramais disponíveis
     public function index()
     {

@@ -4,80 +4,123 @@
 
 @section('content')
 <div class="container mt-5">
-    <div class="row">
-
-    <!-- Seção de Ramais -->
-    <div class="col-md-8">
-                <h1 class="text-primary">Monitor de Ramais e Ligações</h1>
-
-
-                <!-- Cards Fixos no Topo -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card fixed-card bg-primary text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Ligações Recebidas</h5>
-                    <h3>{{ $dadosChamadas->total_recebidas ?? 0 }}</h3>
+    <div class="row align-items-center">
+        <!-- Cards Fixos -->
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-4">
+                    <button class="fixed-card btn btn-primary w-100" data-toggle="modal" data-target="#modalRecebidas">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Ligações Recebidas</h5>
+                            <h3>{{ $dadosChamadas->total_recebidas ?? 0 }}</h3>
+                        </div>
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="fixed-card btn btn-success w-100" data-toggle="modal" data-target="#modalAtendidas">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Ligações Atendidas</h5>
+                            <h3>{{ $dadosChamadas->total_atendidas ?? 0 }}</h3>
+                        </div>
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="fixed-card btn btn-danger w-100" data-toggle="modal" data-target="#modalPerdidas">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Ligações Perdidas</h5>
+                            <h3>{{ $dadosChamadas->total_perdidas ?? 0 }}</h3>
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card fixed-card bg-success text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Ligações Atendidas</h5>
-                    <h3>{{ $dadosChamadas->total_atendidas ?? 0 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card fixed-card bg-danger text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Ligações Perdidas</h5>
-                    <h3>{{ $dadosChamadas->total_perdidas ?? 0 }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
 
-
-
-<div>
-    <br>
-</br>
-
-</div>
-
-
-        
-            <!-- Container para os cards -->
-            <div class="row" id="sippers-cards">
-                <!-- Os cards serão adicionados aqui via JavaScript -->
-            </div>
-        </div>
-
-        <!-- Seção de Filas -->
+        <!-- Toggle da Fila (alinhado à direita) -->
         <div class="col-md-3 d-flex justify-content-end">
             <div>
                 <div class="d-flex justify-content-end mb-2">
                     <div class="form-check form-switch" style="transform: scale(1.3);">
                         <input class="form-check-input" type="checkbox" id="queue-toggle">
-                        <label class="form-check-label text-secondary fw-bold ms-2" for="queue-toggle">Mostrar</label>
+                        <label class="form-check-label text-secondary fw-bold ms-2" for="queue-toggle">Mostrar Fila</label>
                     </div>
                 </div>
-                <div id="queue-section" class="queue-section p-3 shadow-sm rounded" 
-                     style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem; display: none;">
+                <div id="queue-section" class="queue-section p-3 shadow-sm rounded d-none" 
+                     style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem; transition: max-height 0.5s ease-in-out;">
                     <h3 class="text-secondary">Ligações em Fila</h3>
                     <div id="queue-table" class="queue-table bg-white rounded p-2" style="max-height: 280px; overflow-y: auto;">
-                        <!-- Os dados das filas serão adicionados aqui via JavaScript -->
+                        <!-- Dados das filas serão carregados via JS -->
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Separador -->
+    <hr class="my-4">
+
+    <!-- Container para os Cards Dinâmicos -->
+    <div class="row">
+        <div class="col-12">
+            <div id="dynamic-cards-container" class="p-3 bg-white shadow-sm rounded" style="min-height: 150px; transition: min-height 0.5s ease-in-out;">
+                <h4 class="text-secondary">Ramais Ativos</h4>
+                <div class="row" id="sippers-cards">
+                    <!-- Os cards dinâmicos serão adicionados aqui via JavaScript -->
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Modais -->
+@foreach(['Recebidas', 'Atendidas', 'Perdidas'] as $tipo)
+<div class="modal fade" id="modal{{ $tipo }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ligações {{ $tipo }}</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Origem</th>
+                            <th>Destino</th>
+                            <th>Fila</th>
+                            <th>Duração</th>
+                        </tr>
+                    </thead>
+                    <tbody id="extrato{{ $tipo }}">
+                        <tr><td colspan="4">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
+
+<script>
+    document.getElementById('queue-toggle').addEventListener('change', function() {
+        let queueSection = document.getElementById('queue-section');
+        let dynamicCardsContainer = document.getElementById('dynamic-cards-container');
+
+        if (this.checked) {
+            queueSection.classList.remove('d-none');
+            dynamicCardsContainer.style.minHeight = "100px"; // Reduz altura
+        } else {
+            queueSection.classList.add('d-none');
+            dynamicCardsContainer.style.minHeight = "150px"; // Retorna ao padrão
+        }
+    });
+</script>
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     const socket = io("http://93.127.212.237:4000");
@@ -236,7 +279,49 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 });
 
 
+
+
 </script>
+<script>
+      $(document).ready(function() {
+    $('.fixed-card').click(function() {
+        let modalId = $(this).attr('data-target') || $(this).attr('data-bs-target'); // Pega o ID correto
+        let tipo = modalId.replace('#modal', ''); // Remove o prefixo "modal"
+
+        $.ajax({
+            url: '/extrato-chamadas/' + tipo.toLowerCase(),
+            method: 'GET',
+            success: function(data) {
+                let tbody = $('#extrato' + tipo);
+                tbody.empty();
+                if (data.length > 0) {
+                    data.forEach(chamada => {
+                        tbody.append(`<tr>
+                            <td>${chamada.datetime}</td>
+                            <td>${chamada.origem}</td>
+                            <td>${chamada.destino}</td>
+                            <td>${chamada.fila}</td>
+                            <td>${chamada.duracao}</td>
+                        </tr>`);
+                    });
+                } else {
+                    tbody.append(`<tr><td colspan="4">Nenhuma chamada encontrada.</td></tr>`);
+                }
+
+                // Agora abre o modal
+                var modal = new bootstrap.Modal(document.getElementById('modal' + tipo));
+                modal.show();
+            },
+            error: function() {
+                alert('Erro ao carregar os dados.');
+            }
+        });
+    });
+});
+ 
+    </script>
+
+
 
 <style>
 .card {
@@ -322,6 +407,5 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
     animation: shake 0.4s infinite;
 }
 </style>
+
 @endsection
-
-

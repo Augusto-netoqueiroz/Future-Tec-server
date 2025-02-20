@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -22,7 +24,8 @@ class User extends Authenticatable
         'cargo',
         'avatar',
         'pause',  // Certifique-se de que o campo 'pause' está presente no $fillable
-        'current_pause_log_id'
+        'current_pause_log_id',
+        'empresa_id',  // Não se esqueça de adicionar o campo empresa_id aqui
     ];
 
     /**
@@ -97,5 +100,14 @@ class User extends Authenticatable
 {
     return $this->hasMany(UserPauseLog::class);
 }
+
+
+public function empresa()
+{
+    return $this->belongsTo(Empresa::class);
+}
+
+
+
 
 }

@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+class EmpresaMiddleware
+
+{
+    public function handle(Request $request, Closure $next)
+    {
+        Log::info('Middleware Empresa executado.');
+    
+        if (Auth::check() && Auth::user()->empresa_id === 1) {
+            return $next($request);
+        }
+    
+        Log::warning('Acesso negado para empresa_id: ' . (Auth::check() ? Auth::user()->empresa_id : 'Desconhecido'));
+    
+        return abort(403, 'Acesso não autorizado.');
+    }
+}

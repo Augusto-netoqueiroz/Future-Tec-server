@@ -23,6 +23,11 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ShareErrorsFromSession::class,
         \App\Http\Middleware\Authenticate::class,
         \App\Http\Middleware\PreventCache::class,
+        \App\Http\Middleware\EmpresaAdminMiddleware::class,
+        \App\Http\Middleware\EmpresaMiddleware::class,
+        \App\Http\Middleware\TesteMiddleware::class,
+        \App\Http\Middleware\VerifySession::class,
+        
     
     ];
 
@@ -41,6 +46,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\TesteMiddleware::class,
         ],
 
         'api' => [
@@ -69,5 +75,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'check.permission' => \App\Http\Middleware\CheckPermission::class,
         'verify.session' => \App\Http\Middleware\VerifySession::class,
+        'empresa' => \App\Http\Middleware\EmpresaMiddleware::class,
+        'teste' => \App\Http\Middleware\TesteMiddleware::class,
     ];
 }

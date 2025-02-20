@@ -4,13 +4,24 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class FilaController extends Controller
 {
     // Exibe a página principal de filas
     public function index()
     {
-        $filas = DB::table('queues')->get();
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Usuário não autenticado.');
+        }
+    
+        $empresa_id = Auth::user()->empresa_id;
+    
+        $filas = DB::table('queues')
+            ->where('empresa_id', $empresa_id)
+            ->get();
+    
         return view('filas.filas', compact('filas'));
     }
 
