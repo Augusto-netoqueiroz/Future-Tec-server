@@ -5,16 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\GlpiService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class GlpiController extends Controller {
     protected $glpiService;
 
 
 
-
+ 
+    
     public function index(Request $request)
     {
-        // Obtendo filtros da requisição
         $userId = $request->input('user_id');
         $entityId = $request->input('entity_id');
         $startDate = $request->input('start_date');
@@ -24,13 +26,29 @@ class GlpiController extends Controller {
             $users = $this->glpiService->getUsers();
             $entities = $this->glpiService->getEntities();
     
-            // Inicializa os tickets como uma coleção vazia
-            $tickets = collect();
+            // Obtendo os tickets e garantindo que seja uma coleção
+            $tickets = [];
     
-            // Só chama a API se algum filtro for preenchido
             if ($userId || $entityId || $startDate || $endDate) {
                 $tickets = $this->glpiService->getTickets($userId, $entityId, $startDate, $endDate);
             }
+    
+            // Convertendo para Collection para usar métodos do Laravel
+            $tickets = collect($tickets); 
+    
+            // Implementação da paginação manual
+            $perPage = 10; // Define o número de registros por página
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            $currentItems = $tickets->slice(($currentPage - 1) * $perPage, $perPage)->values();
+    
+            $tickets = new LengthAwarePaginator(
+                $currentItems,
+                $tickets->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+    
         } catch (\Exception $e) {
             return back()->with('error', 'Erro ao carregar dados: ' . $e->getMessage());
         }
@@ -39,52 +57,70 @@ class GlpiController extends Controller {
     }
     
     
+    public function filterTickets(Request $request)
+{
+    try {
+        $page = $request->input('page', 1); // Pega a página da requisição ou assume 1
+        $perPage = 10; // Defina quantos tickets por página
+
+        // Busca os tickets filtrados no serviço GLPI
+        $response = $this->glpiService->filterTickets(
+            $request->input('user_id'),
+            $request->input('entity_id'),
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
+
+        // Verifica se há dados válidos
+        if (empty($response['data']) || !is_array($response['data'])) {
+            return response()->json([
+                'data' => [],
+                'current_page' => $page,
+                'last_page' => 1
+            ]);
+        }
+
+        // Acessa os tickets dentro de "data"
+        $tickets = $response['data'];
+
+        // Formata os tickets corretamente
+        $formattedTickets = array_map(function ($ticket) {
+            return [
+                'id' => $ticket["2"] ?? 'N/A',
+                'titulo' => $ticket["1"] ?? 'Sem título',
+                'requerente' => $ticket["4"] ?? 'N/A',
+                'categoria' => $ticket["7"] ?? 'N/A',
+                'origem' => $ticket["9"] ?? 'N/A',
+                'descricao' => $ticket["21"] ?? 'Sem descrição',
+                'entidade' => $ticket["80"] ?? 'N/A',
+                'status' => $ticket["12"] ?? 'N/A',
+                'data_abertura' => isset($ticket["15"]) && is_string($ticket["15"]) 
+                    ? date('d/m/Y H:i', strtotime($ticket["15"])) 
+                    : 'N/A'
+            ];
+        }, $tickets);
+
+        // Implementação manual da paginação
+        $total = count($formattedTickets);
+        $offset = ($page - 1) * $perPage;
+        $paginatedData = array_slice($formattedTickets, $offset, $perPage);
+
+        return response()->json([
+            'data' => $paginatedData,
+            'current_page' => $page,
+            'last_page' => ceil($total / $perPage),
+            'total' => $total
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erro ao carregar tickets: ' . $e->getMessage()], 500);
+    }
+}
+
+    
     
 
-    public function filterTickets(Request $request)
-    {
-        try {
-            // Busca os tickets filtrados no serviço GLPI
-            $response = $this->glpiService->filterTickets(
-                $request->input('user_id'),
-                $request->input('entity_id'),
-                $request->input('start_date'),
-                $request->input('end_date')
-            );
     
-            // Verifica se há dados válidos
-            if (empty($response['data']) || !is_array($response['data'])) {
-                return response()->json(['data' => []]);
-            }
-    
-            // Acessa os tickets dentro de "data"
-            $tickets = $response['data'];
-    
-            // Formata os tickets corretamente
-            $formattedTickets = [];
-    
-            foreach ($tickets as $ticket) {
-                $formattedTickets[] = [
-                    'id' => $ticket["2"] ?? 'N/A',
-                    'titulo' => $ticket["1"] ?? 'Sem título',
-                    'requerente' => $ticket["4"] ?? 'N/A',
-                    'categoria' => $ticket["7"] ?? 'N/A',
-                    'origem' => $ticket["9"] ?? 'N/A',
-                    'descricao' => $ticket["21"] ?? 'Sem descrição',
-                    'entidade' => $ticket["80"] ?? 'N/A',
-                    'status' => $ticket["12"] ?? 'N/A', // Adicionado o status
-                    'data_abertura' => isset($ticket["15"]) && is_string($ticket["15"]) 
-                        ? date('d/m/Y H:i', strtotime($ticket["15"])) 
-                        : 'N/A'
-                ];
-            }
-    
-            return response()->json(['data' => $formattedTickets]);
-    
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao carregar tickets: ' . $e->getMessage()], 500);
-        }
-    }
     
     
 

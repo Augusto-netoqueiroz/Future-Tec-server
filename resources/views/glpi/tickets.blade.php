@@ -94,16 +94,19 @@
 </div>
 
 <script>
-document.getElementById('filterForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    loadTickets(1);
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("filterButton").addEventListener("click", function (event) {
+        event.preventDefault();
+        loadTickets(1);
+    });
 });
 
 function loadTickets(page) {
     let formData = new FormData(document.getElementById('filterForm'));
-    formData.append('page', page);
+    formData.append('page', page); // Adiciona a página na requisição
+
     let queryString = new URLSearchParams(formData).toString();
-    let url = "{{ route('glpi.tickets.filter') }}" + '?' + queryString;
+    let url = "/glpi/tickets/filter?" + queryString; // Substitua pela rota correta
 
     document.getElementById('filterButton').disabled = true;
     document.getElementById('loading').style.display = 'inline';
@@ -130,8 +133,6 @@ function loadTickets(page) {
                             </a>
 
                             <form action="/tickets/${ticket.id}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-xs" style="scale: 0.8;" onclick="return confirm('Tem certeza que deseja excluir este ticket?')">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -153,7 +154,7 @@ function loadTickets(page) {
             tableBody.innerHTML = rows;
         }
 
-        updatePagination(data.pagination);
+        updatePagination(data);
 
         document.getElementById('filterButton').disabled = false;
         document.getElementById('loading').style.display = 'none';
@@ -165,23 +166,23 @@ function loadTickets(page) {
     });
 }
 
-function updatePagination(pagination) {
+function updatePagination(data) {
     let paginationContainer = document.getElementById('pagination');
     paginationContainer.innerHTML = '';
 
-    if (!pagination || pagination.total_pages <= 1) return;
+    if (!data || data.last_page <= 1) return;
 
-    let prevDisabled = pagination.current_page === 1 ? 'disabled' : '';
-    let nextDisabled = pagination.current_page === pagination.total_pages ? 'disabled' : '';
+    let prevDisabled = data.current_page === 1 ? 'disabled' : '';
+    let nextDisabled = data.current_page === data.last_page ? 'disabled' : '';
 
     paginationContainer.innerHTML += `
         <li class="page-item ${prevDisabled}">
-            <a class="page-link" href="#" onclick="loadTickets(${pagination.current_page - 1}); return false;">Anterior</a>
+            <a class="page-link" href="#" onclick="loadTickets(${data.current_page - 1}); return false;">Anterior</a>
         </li>
     `;
 
-    for (let i = 1; i <= pagination.total_pages; i++) {
-        let active = i === pagination.current_page ? 'active' : '';
+    for (let i = 1; i <= data.last_page; i++) {
+        let active = i === data.current_page ? 'active' : '';
         paginationContainer.innerHTML += `
             <li class="page-item ${active}">
                 <a class="page-link" href="#" onclick="loadTickets(${i}); return false;">${i}</a>
@@ -191,12 +192,11 @@ function updatePagination(pagination) {
 
     paginationContainer.innerHTML += `
         <li class="page-item ${nextDisabled}">
-            <a class="page-link" href="#" onclick="loadTickets(${pagination.current_page + 1}); return false;">Próximo</a>
+            <a class="page-link" href="#" onclick="loadTickets(${data.current_page + 1}); return false;">Próximo</a>
         </li>
     `;
 }
 
-loadTickets(1);
 </script>
 
 @endsection
