@@ -7,6 +7,8 @@ use App\Services\GlpiService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class GlpiController extends Controller {
     protected $glpiService;
@@ -153,6 +155,8 @@ class GlpiController extends Controller {
    
 
     public function createTicket(Request $request) {
+
+      
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
@@ -197,6 +201,17 @@ class GlpiController extends Controller {
                 ]);
             }
     
+            // **Registrar a atividade no banco**
+            DB::table('atividade')->insert([
+                'user_id'   => Auth::id(),
+                'acao'      => 'Criação de Ticket', // Agora estamos preenchendo o campo obrigatório
+                'descricao' => "Usuário " . Auth::user()->name . " criou o ticket #$ticketId - " . $request->input('title'),
+                'ip'        => $request->ip(), // CORRIGIDO: Agora pega o IP corretamente
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+    
             return redirect()->back()->with([
                 'success' => 'Ticket criado e associado com sucesso!',
                 'ticket'  => $ticket
@@ -207,6 +222,7 @@ class GlpiController extends Controller {
             return redirect()->back()->with('error', 'Erro interno ao criar o ticket.');
         }
     }
+    
     
     
 
@@ -239,48 +255,68 @@ class GlpiController extends Controller {
 
 
     public function updateTicket(Request $request, $id)
-    {
-        $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'status'      => 'required|in:1,2,3,4,5,6',
-            'category'    => 'nullable|integer',
-            'user'        => 'nullable|integer',
-            'entity'      => 'nullable|integer'
+{
+    $request->validate([
+        'title'       => 'required|string|max:255',
+        'description' => 'required|string',
+        'status'      => 'required|in:1,2,3,4,5,6',
+        'category'    => 'nullable|integer',
+        'user'        => 'nullable|integer',
+        'entity'      => 'nullable|integer'
+    ]);
+
+    try {
+        $ticketData = [
+            'name'              => $request->input('title'),
+            'content'           => $request->input('description'),
+            'status'            => (int) $request->input('status'),
+            'itilcategories_id' => (int) $request->input('category'),
+            'users_id_recipient'=> (int) $request->input('user'),
+            'entities_id'       => (int) $request->input('entity')
+        ];
+
+        $updatedTicket = $this->glpiService->updateTicket($id, $ticketData); 
+
+        // **Registrar a atividade no banco**
+        DB::table('atividade')->insert([
+            'user_id'   => Auth::id(),
+            'acao'      => 'Atualização de Ticket',
+            'descricao' => "Usuário " . Auth::user()->name . " atualizou o ticket #$id - " . $request->input('title'),
+            'ip'        => $request->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-    
-        try {
-            $ticketData = [
-                'name'              => $request->input('title'),
-                'content'           => $request->input('description'),
-                'status'            => (int) $request->input('status'),
-                'itilcategories_id' => (int) $request->input('category'),
-                'users_id_recipient'=> (int) $request->input('user'),
-                'entities_id'       => (int) $request->input('entity')
-            ];
-    
-            $updatedTicket = $this->glpiService->updateTicket($id, $ticketData); // ✅ Passa array corretamente
-    
-            return redirect()->route('glpi.tickets', $id)->with('success', 'Ticket atualizado com sucesso!');
-    
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao atualizar ticket: ' . $e->getMessage());
-        }
+
+        return redirect()->route('glpi.tickets', $id)->with('success', 'Ticket atualizado com sucesso!');
+
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Erro ao atualizar ticket: ' . $e->getMessage());
     }
-    
+}
     
     
 
 
+public function deleteTicket($id) {
+    try {
+        $this->glpiService->deleteTicket($id);
 
-    public function deleteTicket($id) {
-        try {
-            $this->glpiService->deleteTicket($id);
-            return redirect()->route('glpi.tickets')->with('success', 'Ticket deletado com sucesso!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao deletar ticket: ' . $e->getMessage());
-        }
+        // **Registrar a atividade no banco**
+        DB::table('atividade')->insert([
+            'user_id'   => Auth::id(),
+            'acao'      => 'Exclusão de Ticket',
+            'descricao' => "Usuário " . Auth::user()->name . " deletou o ticket #$id",
+            'ip'        => request()->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('glpi.tickets')->with('success', 'Ticket deletado com sucesso!');
+
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Erro ao deletar ticket: ' . $e->getMessage());
     }
+}
 
     
     public function edit($id)
