@@ -50,8 +50,8 @@
             <select class="form-control" id="cargo" name="cargo" required>
                 <option value="Administrador" {{ old('cargo') == 'Administrador' ? 'selected' : '' }}>Administrador</option>
                 <option value="Gerente" {{ old('cargo') == 'Gerente' ? 'selected' : '' }}>Gerente</option>
+                <option value="Supervisor" {{ old('cargo') == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
                 <option value="Operador" {{ old('cargo') == 'Operador' ? 'selected' : '' }}>Operador</option>
-                <option value="Outro" {{ old('cargo') == 'Outro' ? 'selected' : '' }}>Outro</option>
             </select>
         </div>
 

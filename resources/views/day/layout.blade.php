@@ -91,7 +91,14 @@
 		<!--begin::App-->
 		
 			<!--begin::Page-->
-			
+					
+					<!--Grupo de bloqueio-->
+					@php
+    				$cargosBloqueados = ['Operador', 'Supervisor']; // Lista de cargos que não devem ver o menu
+					@endphp
+					<!--Grupo de bloqueio-->
+
+
 				<!--begin::Header-->
 				<div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
 					<!--begin::Header main-->
@@ -714,6 +721,7 @@
 										
 										
 								<!-- Início do Menu Administração -->
+								@if(!in_array(Auth::user()->cargo, $cargosBloqueados))
 								<div data-kt-menu-trigger="click" class="menu-item 
 								{{ request()->routeIs('users.index', 'Pausas.inicio','empresas.create') 
 					 			? 'here show' : '' }} menu-accordion">
@@ -762,7 +770,7 @@
 												<span class="menu-title">Criar empresa</span>
 											</a>
 										</div>
-
+										@endif
 									</div>
 								</div>
 								<!-- Fim do Menu Administração -->		
