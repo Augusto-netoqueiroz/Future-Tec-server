@@ -250,22 +250,57 @@ function fetchQueueData(finalData) {
             }
 
             const queueData = res?.output || [];
-            //console.log("Linha bruta:", queueData);
-
-            // Processar e filtrar filas com callers ativos
             const processedQueueData = processQueueData(queueData);
 
-            // Emitindo os dados já processados
-            io.emit("fetch-unified-data-response", {
-                sippeers: finalData,
-                queueData: processedQueueData
-            });
+            // Obter os nomes das filas únicas para buscar os respectivos empresa_id
+            const queueNames = [...new Set(processedQueueData.map(q => q.queueName))];
 
-            // Continuar com o próximo ciclo após 1 segundo
-            setTimeout(fetchAndEmitUnifiedData, 1000);
+            if (queueNames.length === 0) {
+                emitirDados(finalData, processedQueueData);
+                return;
+            }
+
+            // Buscar os empresa_id das filas no banco de dados
+            const placeholders = queueNames.map(() => '?').join(', ');
+            const query = `SELECT name, empresa_id FROM queues WHERE name IN (${placeholders})`;
+
+            db.query(query, queueNames, (err, results) => {
+                if (err) {
+                    console.error("Erro ao buscar empresa_id das filas:", err);
+                    emitirDados(finalData, processedQueueData);
+                    return;
+                }
+
+                // Criar um mapa para relacionar queueName -> empresa_id
+                const empresaMap = {};
+                results.forEach(row => {
+                    empresaMap[row.name] = row.empresa_id;
+                });
+
+                // Adicionar empresa_id às filas processadas
+                const enrichedQueueData = processedQueueData.map(queue => ({
+                    ...queue,
+                    empresa_id: empresaMap[queue.queueName] || null  // Se não encontrar, retorna null
+                }));
+
+                // Emitir os dados com empresa_id incluído
+                emitirDados(finalData, enrichedQueueData);
+            });
         }
     );
 }
+
+// Função para emitir os dados finais via Socket.io
+function emitirDados(sippeers, queueData) {
+    io.emit("fetch-unified-data-response", {
+        sippeers,
+        queueData
+    });
+
+    // Próximo ciclo de execução
+    setTimeout(fetchAndEmitUnifiedData, 1000);
+}
+
 
 // Função para processar as filas
 function processQueueData(queueData) {
@@ -330,7 +365,7 @@ let queueMapping = {}; // Guarda ramais em ligação e suas filas
 
 
 
-function fetchAndEmitQueueWithChannels(callback) { // Adicionando callback
+function fetchAndEmitQueueWithChannels(callback) {
     ami.action(
         {
             action: 'Command',
@@ -345,31 +380,57 @@ function fetchAndEmitQueueWithChannels(callback) { // Adicionando callback
             const queueData = res?.output || [];
             queueMapping = {}; // Resetar antes de preencher
             let currentQueue = null;
+            let queueNames = new Set();
 
             queueData.forEach(line => {
                 const queueMatch = line.match(/^(\S+)\s+has\s+\d+\s+calls/);
                 if (queueMatch) {
                     currentQueue = queueMatch[1]; // Nome da fila
+                    queueNames.add(currentQueue);
                 }
 
                 if (currentQueue && line.includes("(in call)")) {
                     const ramalMatch = line.match(/SIP\/(\d+)/);
                     if (ramalMatch) {
                         const ramal = ramalMatch[1];
-                        queueMapping[ramal] = currentQueue;
+                        queueMapping[ramal] = { queueName: currentQueue };
                     }
                 }
             });
 
-            //console.log("📌 Mapeamento de Ramais em Ligação:", queueMapping);
+            // 🔍 Buscar empresa_id de cada queueName
+            if (queueNames.size > 0) {
+                const query = `SELECT name, empresa_id FROM queues WHERE name IN (${Array.from(queueNames).map(() => '?').join(', ')})`;
+                db.query(query, Array.from(queueNames), (err, results) => {
+                    if (err) {
+                        console.error("Erro ao buscar empresa_id das filas:", err);
+                        return;
+                    }
 
-            // Verifica se callback é uma função antes de chamar
-            if (typeof callback === "function") {
-                callback();
+                    // Atualizar queueMapping com empresa_id
+                    results.forEach(row => {
+                        Object.keys(queueMapping).forEach(ramal => {
+                            if (queueMapping[ramal].queueName === row.name) {
+                                queueMapping[ramal].empresa_id = row.empresa_id;
+                            }
+                        });
+                    });
+
+                    // Verifica se callback é uma função antes de chamar
+                    if (typeof callback === "function") {
+                        callback();
+                    }
+                });
+            } else {
+                // Se não houver filas, apenas executa o callback
+                if (typeof callback === "function") {
+                    callback();
+                }
             }
         }
     );
 }
+
 
 // Manter a conexão ativa e desconectar do AMI corretamente
 process.on('SIGINT', () => {

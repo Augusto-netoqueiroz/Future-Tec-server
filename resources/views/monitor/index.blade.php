@@ -247,12 +247,15 @@ function atualizarFilas(queueData) {
     const queueTable = document.querySelector("#queue-table");
     queueTable.innerHTML = "";
 
-    if (queueData.length === 0) {
-        queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila.</p>";
+    // Filtra as filas que pertencem à empresa do usuário
+    const filasFiltradas = queueData.filter(queue => queue.empresa_id == empresaId);
+
+    if (filasFiltradas.length === 0) {
+        queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila para sua empresa.</p>";
         return;
     }
 
-    queueData.forEach((queue) => {
+    filasFiltradas.forEach((queue) => {
         // Cria o nome da fila
         const queueNameElement = document.createElement("h3");
         queueNameElement.textContent = queue.queueName;
@@ -280,6 +283,7 @@ function atualizarFilas(queueData) {
         }
     });
 }
+
 
 // Exemplo de como ativar/desativar a exibição da seção de filas com o toggle
 document.querySelector("#queue-toggle").addEventListener("change", (event) => {
