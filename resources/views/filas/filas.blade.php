@@ -6,6 +6,13 @@
 <div class="container-xxl py-8">
     <!-- Título da página -->
     <h1 class="fs-2 fw-bold text-center mb-6">Gerenciar Filas</h1>
+
+        @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
     
     <!-- Botão para criar uma nova fila -->
     <div class="d-flex justify-content-end mb-4">

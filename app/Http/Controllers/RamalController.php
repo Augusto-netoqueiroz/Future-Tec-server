@@ -74,14 +74,48 @@ public function update(Request $request, $id)
         'context' => 'required|string|max:255',
     ]);
 
+    // Obtém os dados atuais do ramal antes da atualização
+    $ramal = DB::table('sippeers')->where('id', $id)->first();
+
+    if (!$ramal) {
+        return redirect()->route('ramais.index')->with('error', 'Ramal não encontrado.');
+    }
+
+    // Monta a descrição das mudanças
+    $descricao = "Usuário " . Auth::user()->name . " atualizou o ramal #$id";
+    
+    if ($ramal->name !== $request->name) {
+        $descricao .= " (Nome: {$ramal->name} → {$request->name})";
+    }
+    if ($ramal->secret !== $request->secret) {
+        $descricao .= " (Senha alterada)";
+    }
+    if ($ramal->context !== $request->context) {
+        $descricao .= " (Contexto: {$ramal->context} → {$request->context})";
+    }
+
+    // Atualiza os dados do ramal
     DB::table('sippeers')->where('id', $id)->update([
         'name' => $request->name,
         'secret' => $request->secret,
         'context' => $request->context,
+       
+    ]);
+
+    // Registrar a atividade no banco
+    DB::table('atividade')->insert([
+        'user_id'   => Auth::id(),
+        'acao'      => 'Atualização de ramal',
+        'descricao' => $descricao,
+        'ip'        => request()->ip(),
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     return redirect()->route('ramais.index')->with('success', 'Ramal atualizado com sucesso!');
 }
+
+
 
 public function store(Request $request)
 {
@@ -96,7 +130,7 @@ public function store(Request $request)
     ]);
 
     // Inserção do novo ramal na empresa do usuário
-    DB::table('sippeers')->insert([
+    $ramal_id = DB::table('sippeers')->insertGetId([
         'name' => $request->ramal,
         'secret' => $request->senha,
         'host' => 'dynamic',
@@ -106,16 +140,46 @@ public function store(Request $request)
         'empresa_id' => $empresa_id, // Adiciona o empresa_id corretamente
     ]);
 
+    // Registrar a atividade no banco
+    DB::table('atividade')->insert([
+        'user_id'   => Auth::id(),
+        'acao'      => 'Criação de ramal',
+        'descricao' => "Usuário " . Auth::user()->name . " criou o ramal #$ramal_id ($request->ramal)",
+        'ip'        => request()->ip(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
     return redirect()->route('ramais.index')->with('success', 'Ramal criado com sucesso!');
 }
 
 
+
     public function destroy($id)
     {
-        DB::table('sippeers')->where('id', $id)->delete();
+    // Buscar o nome do ramal antes de excluir
+    $ramal = DB::table('sippeers')->where('id', $id)->first();
 
-        return redirect()->route('ramais.index')->with('success', 'Ramal excluído com sucesso!');
+    if (!$ramal) {
+        return redirect()->route('ramais.index')->with('error', 'Ramal não encontrado.');
     }
+
+    // Excluir o ramal
+    DB::table('sippeers')->where('id', $id)->delete();
+
+    // Registrar a atividade no banco
+    DB::table('atividade')->insert([
+        'user_id'   => Auth::id(),
+        'acao'      => 'Exclusão de ramal',
+        'descricao' => "Usuário " . Auth::user()->name . " deletou o ramal #$id ($ramal->name)",
+        'ip'        => request()->ip(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return redirect()->route('ramais.index')->with('success', 'Ramal excluído com sucesso!');
+}
+
 
    
 
@@ -167,29 +231,40 @@ public function store(Request $request)
     }
 
     public function salvarTronco(Request $request)
-{
-    $request->validate([
-        'nome' => 'required|string|max:255|unique:sippeers,name',
-        'senha' => 'required|string|max:255',
-        'context' => 'required|string|max:255',
-        'host' => 'nullable|string|max:255',  
-    ]);
-
-    DB::table('sippeers')->insert([
-        'name' => $request->nome,
-        'secret' => $request->senha,
-        'host' => $request->host ?? '',
-        'context' => $request->context,
-        'type' => 'friend',
-        'qualify' => 'yes',
-        'ipaddr' => '',
-        'modo' => 'tronco', 
-        'empresa_id' => Auth::user()->empresa_id, // Adicionando o empresa_id do usuário logado
-    ]);
-
-    return redirect()->route('troncos.index')->with('success', 'Tronco criado com sucesso!');
-}
-
+    {
+        $request->validate([
+            'nome' => 'required|string|max:255|unique:sippeers,name',
+            'senha' => 'required|string|max:255',
+            'context' => 'required|string|max:255',
+            'host' => 'nullable|string|max:255',  
+        ]);
+    
+        // Inserção do tronco
+        $id = DB::table('sippeers')->insertGetId([
+            'name' => $request->nome,
+            'secret' => $request->senha,
+            'host' => $request->host ?? '',
+            'context' => $request->context,
+            'type' => 'friend',
+            'qualify' => 'yes',
+            'ipaddr' => '',
+            'modo' => 'tronco', 
+            'empresa_id' => Auth::user()->empresa_id,
+        ]);
+    
+        // Registrar atividade
+        DB::table('atividade')->insert([
+            'user_id'   => Auth::id(),
+            'acao'      => 'Criação de tronco',
+            'descricao' => "Usuário " . Auth::user()->name . " criou o tronco #$id ({$request->nome})",
+            'ip'        => request()->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    
+        return redirect()->route('troncos.index')->with('success', 'Tronco criado com sucesso!');
+    }
+    
     public function editarTronco($id)
     {
         $tronco = DB::table('sippeers')->where('id', $id)->first();
@@ -210,22 +285,75 @@ public function store(Request $request)
             'host' => 'required|string|max:255',
         ]);
     
+        // Obtém os dados atuais do tronco antes da atualização
+        $tronco = DB::table('sippeers')->where('id', $id)->first();
+    
+        if (!$tronco) {
+            return redirect()->route('troncos.index')->with('error', 'Tronco não encontrado.');
+        }
+    
+        // Monta a descrição das mudanças
+        $descricao = "Usuário " . Auth::user()->name . " atualizou o tronco #$id";
+    
+        if ($tronco->name !== $request->nome) {
+            $descricao .= " (Nome: {$tronco->name} → {$request->nome})";
+        }
+        if ($tronco->secret !== $request->senha) {
+            $descricao .= " (Senha alterada)";
+        }
+        if ($tronco->context !== $request->context) {
+            $descricao .= " (Contexto: {$tronco->context} → {$request->context})";
+        }
+        if ($tronco->host !== $request->host) {
+            $descricao .= " (Host: {$tronco->host} → {$request->host})";
+        }
+    
+        // Atualiza os dados do tronco
         DB::table('sippeers')->where('id', $id)->update([
             'name' => $request->nome,
             'secret' => $request->senha,
             'host' => $request->host,
             'context' => $request->context,
+            'updated_at' => now(),
+        ]);
+    
+        // Registrar a atividade no banco
+        DB::table('atividade')->insert([
+            'user_id'   => Auth::id(),
+            'acao'      => 'Atualização de tronco',
+            'descricao' => $descricao,
+            'ip'        => request()->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     
         return redirect()->route('troncos.index')->with('success', 'Tronco atualizado com sucesso!');
     }
-
+    
     public function destroytronco($id)
     {
+        // Obtém os dados do tronco antes de excluir
+        $tronco = DB::table('sippeers')->where('id', $id)->first();
+    
+        if (!$tronco) {
+            return redirect()->route('troncos.index')->with('error', 'Tronco não encontrado.');
+        }
+    
         DB::table('sippeers')->where('id', $id)->delete();
-
+    
+        // Registrar a atividade no banco
+        DB::table('atividade')->insert([
+            'user_id'   => Auth::id(),
+            'acao'      => 'Exclusão de tronco',
+            'descricao' => "Usuário " . Auth::user()->name . " deletou o tronco #$id ({$tronco->name})",
+            'ip'        => request()->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    
         return redirect()->route('troncos.index')->with('success', 'Tronco excluído com sucesso!');
     }
+    
 
 
 }

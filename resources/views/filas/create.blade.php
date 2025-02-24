@@ -10,11 +10,6 @@
     <form action="{{ route('filas.store') }}" method="POST">
         @csrf
         <div class="mb-3">
-            <label for="id" class="form-label">ID da Fila</label>
-            <input type="number" class="form-control" id="id" name="id" required>
-            <small class="form-text text-muted">Escolha um ID único para a fila.</small>
-        </div>
-        <div class="mb-3">
             <label for="name" class="form-label">Nome da Fila</label>
             <input type="text" class="form-control" id="name" name="name" required>
         </div>
