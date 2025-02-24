@@ -54,6 +54,12 @@
             <input type="password" class="form-control" id="password" name="password">
         </div>
 
+        {{-- Confirmação da Senha --}}
+        <div class="mb-3">
+            <label for="password_confirmation" class="form-label">Confirme a Nova Senha</label>
+            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation">
+        </div>
+
         {{-- Cargo --}}
         <div class="mb-3">
             <label for="cargo" class="form-label">Cargo</label>

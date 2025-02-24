@@ -167,38 +167,51 @@ class UserController extends Controller
 }
 
 
-    public function logoutUser($id)
-    {
-        try {
-            // Remover a sessão do usuário pelo ID
-            DB::table('sessions')->where('user_id', $id)->delete();
-    
-            // Atualizar a tabela 'agente_ramal_vinculo', encerrando o vínculo
-            DB::table('agente_ramal_vinculo')
-                ->where('agente_id', $id)
-                ->whereNull('fim_vinculo')
-                ->update(['fim_vinculo' => now()]);
-    
-            // Atualizar a tabela 'queue_members', removendo o interface
-            DB::table('queue_members')->where('user_id', $id)->update(['interface' => null]);
-    
-            // Obter o usuário pelo ID
-            $user = User::find($id);
-    
-            // Se o usuário encerrado for o mesmo autenticado, desconecta e redireciona para o login
-            if ($user && Auth::id() == $id) {
-                Auth::logout(); // Desconectar o usuário atual
-                session()->invalidate(); // Invalidar a sessão
-                session()->regenerateToken(); // Regenerar o token CSRF
-    
-                return redirect()->route('login')->with('success', 'Sua sessão foi encerrada.');
-            }
-    
-            return redirect()->route('users.index')->with('success', 'Sessão encerrada com sucesso.');
-        } catch (\Exception $e) {
-            return redirect()->route('users.index')->with('error', 'Erro ao encerrar a sessão: ' . $e->getMessage());
+public function logoutUser($id)
+{
+    try {
+        // Remover a sessão do usuário pelo ID
+        DB::table('sessions')->where('user_id', $id)->delete();
+
+        // Atualizar a tabela 'agente_ramal_vinculo', encerrando o vínculo
+        DB::table('agente_ramal_vinculo')
+            ->where('agente_id', $id)
+            ->whereNull('fim_vinculo')
+            ->update(['fim_vinculo' => now()]);
+
+        // Atualizar a tabela 'queue_members', removendo o interface
+        DB::table('queue_members')->where('user_id', $id)->update(['interface' => null]);
+
+        // Obter o usuário pelo ID
+        $user = User::find($id);
+
+        if ($user) {
+            // Registrar atividade
+            DB::table('atividade')->insert([
+                'user_id'   => Auth::id(),
+                'acao'      => 'Logout de Usuário',
+                'descricao' => "Usuário " . Auth::user()->name . " encerrou a sessão de $user->name.",
+                'ip'        => request()->ip(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
+
+        // Se o usuário encerrado for o mesmo autenticado, desconecta e redireciona para o login
+        if ($user && Auth::id() == $id) {
+            Auth::logout(); // Desconectar o usuário atual
+            session()->invalidate(); // Invalidar a sessão
+            session()->regenerateToken(); // Regenerar o token CSRF
+
+            return redirect()->route('login')->with('success', 'Sua sessão foi encerrada.');
+        }
+
+        return redirect()->route('users.index')->with('success', 'Sessão encerrada com sucesso.');
+    } catch (\Exception $e) {
+        return redirect()->route('users.index')->with('error', 'Erro ao encerrar a sessão: ' . $e->getMessage());
     }
+}
+
     
 
 
@@ -225,34 +238,45 @@ class UserController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'cargo' => 'required|string|max:255',
-            'avatar' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
-        ]);
-    
-        $avatarPath = null;
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-        }
-    
-        $user = auth()->user(); // Obtém o usuário autenticado
-    
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'cargo' => $request->cargo,
-            'avatar' => $avatarPath,
-            'empresa_id' => $user->empresa_id, 
-            'empresa_nome' => $user->empresa_nome,// Garante que o novo usuário pertence à mesma empresa
-        ]);
-    
-        return redirect()->route('users.index')->with('success', 'Usuário criado com sucesso!');
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|string|min:8|confirmed',
+        'cargo' => 'required|string|max:255',
+        'avatar' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+    ]);
+
+    $avatarPath = null;
+    if ($request->hasFile('avatar')) {
+        $avatarPath = $request->file('avatar')->store('avatars', 'public');
     }
+
+    $user = auth()->user(); // Obtém o usuário autenticado
+
+    $novoUsuario = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => bcrypt($request->password),
+        'cargo' => $request->cargo,
+        'avatar' => $avatarPath,
+        'empresa_id' => $user->empresa_id, 
+        'empresa_nome' => $user->empresa_nome, // Garante que o novo usuário pertence à mesma empresa
+    ]);
+
+    // Registrar atividade
+    DB::table('atividade')->insert([
+        'user_id'   => $user->id,
+        'acao'      => 'Criação de Usuário',
+        'descricao' => "Usuário " . $user->name . " criou o usuário " . $novoUsuario->name . " (ID: " . $novoUsuario->id . ").",
+        'ip'        => request()->ip(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return redirect()->route('users.index')->with('success', 'Usuário criado com sucesso!');
+}
+
     
 
     public function edit($id)
@@ -262,53 +286,100 @@ class UserController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'cargo' => 'required|string|max:255',
-            'avatar' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
-        ]);
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email,' . $id,
+        'password' => 'nullable|string|min:8|confirmed',
+        'cargo' => 'required|string|max:255',
+        'avatar' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+    ]);
 
+    $user = User::findOrFail($id);
+    $authUser = auth()->user(); // Usuário autenticado
+
+    // Capturar mudanças
+    $changes = [];
+
+    if ($request->name !== $user->name) {
+        $changes[] = "Nome: '{$user->name}' → '{$request->name}'";
+    }
+    if ($request->email !== $user->email) {
+        $changes[] = "Email: '{$user->email}' → '{$request->email}'";
+    }
+    if ($request->cargo !== $user->cargo) {
+        $changes[] = "Cargo: '{$user->cargo}' → '{$request->cargo}'";
+    }
+    if (!empty($request->password)) { 
+        $changes[] = "Senha alterada"; 
+    }
+    if ($request->hasFile('avatar')) {
+        $changes[] = "Avatar atualizado";
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+        $user->avatar = $request->file('avatar')->store('avatars', 'public');
+    }
+
+    // Atualizar os dados do usuário
+    $updateData = [
+        'name' => $request->name,
+        'email' => $request->email,
+        'cargo' => $request->cargo,
+        'avatar' => $user->avatar,
+    ];
+
+    if (!empty($request->password)) {
+        $updateData['password'] = bcrypt($request->password);
+    }
+
+    $user->update($updateData);
+
+    // Se houver alterações, registrar atividade
+    if (!empty($changes)) {
+        DB::table('atividade')->insert([
+            'user_id'   => $authUser->id,
+            'acao'      => 'Atualização de Usuário',
+            'descricao' => "Usuário " . $authUser->name . " alterou o usuário " . $user->name . " (ID: " . $user->id . "). Alterações: " . implode(', ', $changes),
+            'ip'        => request()->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    return redirect()->route('users.index')->with('success', 'Usuário atualizado com sucesso!');
+}
+
+
+public function destroy($id)
+{
+    try {
         $user = User::findOrFail($id);
+        $authUser = auth()->user(); // Usuário autenticado
 
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
         }
 
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'cargo' => $request->cargo,
-            'password' => $request->password ? bcrypt($request->password) : $user->password,
-            'avatar' => $user->avatar,
+        DB::table('sessions')->where('user_id', $id)->delete();
+        $user->delete();
+
+        // Registrar atividade
+        DB::table('atividade')->insert([
+            'user_id'   => $authUser->id,
+            'acao'      => 'Exclusão de Usuário',
+            'descricao' => "Usuário " . $authUser->name . " deletou o usuário " . $user->name . " (ID: " . $user->id . ").",
+            'ip'        => request()->ip(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
-        return redirect()->route('users.index')->with('success', 'Usuário atualizado com sucesso!');
+        return redirect()->route('users.index')->with('success', 'Usuário deletado com sucesso!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Erro ao tentar deletar o usuário. Tente novamente.');
     }
+}
 
-    public function destroy($id)
-    {
-        try {
-            $user = User::findOrFail($id);
-
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-
-            DB::table('sessions')->where('user_id', $id)->delete();
-
-            $user->delete();
-
-            return redirect()->route('users.index')->with('success', 'Usuário deletado com sucesso!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Erro ao tentar deletar o usuário. Tente novamente.');
-        }
-    }
 
 
     public function togglePause(Request $request)
@@ -336,6 +407,7 @@ public function createEmpresa()
 
 public function storeEmpresa(Request $request)
 {
+    $authUser = auth()->user(); // Usuário autenticado
     $request->validate([
         'nome' => 'required|string|max:255',
         'cnpj' => 'required|string|max:255|unique:empresas,cnpj',
@@ -344,6 +416,17 @@ public function storeEmpresa(Request $request)
     DB::table('empresas')->insert([
         'nome' => $request->nome,
         'cnpj' => $request->cnpj,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+
+    // Registrar atividade
+    DB::table('atividade')->insert([
+        'user_id'   => $authUser->id,
+        'acao'      => 'Criação de empresa',
+        'descricao' => "Usuário " . $authUser->name . " criou a empresa -> " . '(' . $request->nome . ')',
+        'ip'        => request()->ip(),
         'created_at' => now(),
         'updated_at' => now(),
     ]);
