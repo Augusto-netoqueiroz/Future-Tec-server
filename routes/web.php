@@ -257,7 +257,8 @@ Route::get('/glpi/tickets', [GlpiController::class, 'index'])->name('glpi.ticket
 
 Route::get('/glpi/tickets/filter', [GLPIController::class, 'filterTickets'])->name('glpi.tickets.filter');
 Route::put('/tickets/{id}', [GlpiController::class, 'updateTicket'])->name('tickets.update');
-Route::delete('/tickets/{id}', [GlpiController::class, 'deleteTicket'])->name('tickets.delete');
+Route::delete('/glpi/tickets/{id}', [GlpiController::class, 'deleteTicket'])->name('glpi.tickets.delete');
+
 Route::get('/tickets/{id}/edit', [GlpiController::class, 'edit'])->name('tickets.edit');
 
 

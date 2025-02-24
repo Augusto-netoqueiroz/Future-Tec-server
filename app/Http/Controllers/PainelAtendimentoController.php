@@ -15,11 +15,13 @@ class PainelAtendimentoController extends Controller
     public function index()
     {
         $userId = Auth::id();
-
+        $empresaId = Auth::user()->empresa_id;
+    
         $ramalAssociado = DB::table('sippeers')
             ->where('user_id', $userId)
+            ->where('empresa_id', $empresaId) // Filtra pelos ramais da mesma empresa
             ->first();
-
+    
         if ($ramalAssociado) {
             $ramaisOnline = collect([$ramalAssociado]);
         } else {
@@ -28,11 +30,13 @@ class PainelAtendimentoController extends Controller
                 ->whereNotNull('ipaddr')
                 ->whereRaw('LENGTH(ipaddr) > 6')
                 ->whereNull('user_name')
+                ->where('empresa_id', $empresaId) // Filtra pelos ramais da mesma empresa
                 ->get();
         }
-
+    
         return view('painel-atendimento', compact('ramaisOnline'));
     }
+    
 
     // Associa o usuário autenticado a um ramal
     public function associar(Request $request)

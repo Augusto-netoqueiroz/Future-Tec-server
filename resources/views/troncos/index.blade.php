@@ -25,6 +25,7 @@
                 <th>Host</th>
                 <th>IP do Tronco</th> <!-- Nova Coluna -->
                 <th>Contexto</th>
+                <th>Empresa</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -47,6 +48,7 @@
                     <td>{{ $tronco->host }}</td>
                     <td>{{ $tronco->ipaddr }}</td> <!-- Exibindo o IP do Tronco -->
                     <td>{{ $tronco->context }}</td>
+                    <td>{{ Auth::user()->empresa->id }} - {{ Auth::user()->empresa->nome }}</td>
                     <td>
                         <a href="{{ route('troncos.edit', $tronco->id) }}" class="btn btn-warning btn-sm">Editar</a>
     

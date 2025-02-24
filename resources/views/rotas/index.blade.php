@@ -22,6 +22,7 @@
                     <th>Discagem</th>
                     <th>Destino</th>
                     <th>Tipo de Discagem</th>
+                    <th>Empresa</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -32,6 +33,7 @@
                         <td>{{ $rota->exten }}</td>
                         <td>{{ $rota->appdata }}</td>
                         <td>{{ $rota->tipo_discagem }}</td>
+                        <td>{{ Auth::user()->empresa->id }} - {{ Auth::user()->empresa->nome }}</td>
                         <td>
                             <!-- Botão de editar -->
                             <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editModal{{ $rota->id }}">Editar</button>

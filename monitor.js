@@ -73,10 +73,10 @@ ami.on('error', (err) => {
 // Função para buscar e emitir dados unificados
 function fetchAndEmitUnifiedData() {
     const querySippeers = `
-    SELECT name, ipaddr, modo, user_id, user_name 
+    SELECT name, ipaddr, modo, user_id, user_name, empresa_id 
     FROM sippeers
     WHERE modo = 'ramal' AND LENGTH(ipaddr) > 6
-    `;
+`;
 
     db.query(querySippeers, (err, sippersResults) => {
         if (err) {
@@ -90,34 +90,31 @@ function fetchAndEmitUnifiedData() {
         const enrichSippeersData = () => {
             const enrichedResults = sippersResults.map(sipper => {
                 const pauseData = pausesMap[sipper.user_id];
-                let timeInPause = null;
-
-                if (pauseData && pauseData.started_at) {
+                let timeInPause = "00:00:00";
+            
+                if (pauseData?.started_at) {
                     const pauseStart = new Date(pauseData.started_at);
                     const now = new Date();
-                
+            
                     if (!isNaN(pauseStart)) {
                         const diffMs = now - pauseStart;
                         const hours = Math.floor(diffMs / (1000 * 60 * 60));
                         const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-                
+            
                         timeInPause = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                    } else {
-                        console.error("Data inválida em started_at:", pauseData.started_at);
-                        timeInPause = "00:00:00"; // Garante que o valor não fique errado
                     }
-                } else {
-                    timeInPause = "00:00:00"; // Se não tiver pausa, retorna sempre "00:00:00"
                 }
-
+            
                 return {
                     ...sipper,
                     pause_name: pauseData?.pause_name || null,
                     started_at: pauseData?.started_at || null,
                     time_in_pause: timeInPause,
+                    empresa_id: sipper.empresa_id  // ✅ Adicionando empresa_id ao objeto final
                 };
             });
+            
 
             fetchAndEmitRawChannels(enrichedResults); // Continuação
         };

@@ -132,11 +132,16 @@ function loadTickets(page) {
                                 <i class="fas fa-edit"></i>
                             </a>
 
-                            <form action="/tickets/${ticket.id}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-danger btn-xs" style="scale: 0.8;" onclick="return confirm('Tem certeza que deseja excluir este ticket?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                           <form action="/glpi/tickets/${ticket.id}" method="POST" style="display:inline;">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            
+                            <button type="submit" class="btn btn-danger btn-xs" style="scale: 0.8;"
+                                onclick="return confirm('Tem certeza que deseja excluir este ticket?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+
                         </td>
                         <td>${ticket.id}</td>
                         <td>${ticket.titulo}</td>

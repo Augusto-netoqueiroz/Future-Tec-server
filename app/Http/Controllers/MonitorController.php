@@ -28,51 +28,59 @@ class MonitorController extends Controller
  
 
      public function index()
-     {
+{
+    if (Auth::check()) {
+        Log::info('Usuário autenticado. Empresa ID: ' . Auth::user()->empresa_id);
+    } else {
+        Log::warning('Usuário não autenticado.');
+    }
 
-        if (Auth::check()) {
-            Log::info('Usuário autenticado. Empresa ID: ' . Auth::user()->empresa_id);
-        } else {
-            Log::warning('Usuário não autenticado.');
-        }
-        
-        // Verifica se o empresa_id está na lista de IDs permitidos
-        $allowedCompanies = [1, 2, 3];  // IDs das empresas permitidas
-        if (Auth::check() && !in_array(Auth::user()->empresa_id, $allowedCompanies)) {
-            abort(403, 'Acesso não autorizado');
-        }
-        
-        
-         // Buscar os dados agregados da tabela queue_log apenas para o dia atual
-         $dadosChamadas = DB::table('queue_log')
-             ->whereDate('time', today())
-             ->selectRaw("COUNT(CASE WHEN event = 'ENTERQUEUE' THEN 1 END) AS total_recebidas,
-                          COUNT(CASE WHEN event = 'CONNECT' THEN 1 END) AS total_atendidas,
-                          COUNT(CASE WHEN event = 'ABANDON' OR event = 'EXITWITHTIMEOUT' THEN 1 END) AS total_perdidas")
-             ->first();
-     
-         return view('monitor.index', compact('dadosChamadas'));
-     }
+    // Verifica se o empresa_id está na lista de IDs permitidos
+    $allowedCompanies = [1, 2, 3];  // IDs das empresas permitidas
+    if (Auth::check() && !in_array(Auth::user()->empresa_id, $allowedCompanies)) {
+        abort(403, 'Acesso não autorizado');
+    }
+
+    $empresaId = Auth::user()->empresa_id; // Obtém o empresa_id do usuário autenticado
+
+    // Buscar os dados agregados da tabela queue_log apenas para as filas da empresa do usuário
+    $dadosChamadas = DB::table('queue_log')
+        ->join('queues', 'queue_log.queuename', '=', 'queues.name') // Alterado de 'queue' para 'queuename'
+        ->where('queues.empresa_id', $empresaId) 
+        ->whereDate('queue_log.time', today()) 
+        ->selectRaw("
+            COUNT(CASE WHEN queue_log.event = 'ENTERQUEUE' THEN 1 END) AS total_recebidas,
+            COUNT(CASE WHEN queue_log.event = 'CONNECT' THEN 1 END) AS total_atendidas,
+            COUNT(CASE WHEN queue_log.event = 'ABANDON' OR queue_log.event = 'EXITWITHTIMEOUT' THEN 1 END) AS total_perdidas
+        ")
+        ->first();
+
+
+    return view('monitor.index', compact('dadosChamadas'));
+}
+
      
 
-     public function getExtratoChamadas($tipo)
-     {
-         $query = DB::table('queue_log')
-             ->select(
-                 'time as datetime', 
-                 'callid as origem',  // Substituindo 'caller' por 'callid' (Ajuste conforme necessário)
-                 'agent as destino', 
-                 'queuename as fila',
-                 'duration as duracao' // Substituindo 'data3' por 'duration'
-             )
-             ->where('event', $tipo == 'recebidas' ? 'ENTERQUEUE' : ($tipo == 'atendidas' ? 'CONNECT' : 'ABANDON'))
-             ->orderBy('time', 'desc')
-             ->limit(10)
-             ->get();
-     
-         return response()->json($query);
-     }
-     
+public function getExtratoChamadas($tipo)
+{
+    $query = DB::table('queue_log')
+        ->join('queues', DB::raw('CONVERT(queue_log.queuename USING utf8mb4) COLLATE utf8mb4_general_ci'), '=', DB::raw('queues.name COLLATE utf8mb4_general_ci'))
+        ->select(
+            'queue_log.time as datetime',
+            'queue_log.callid as origem',
+            'queue_log.agent as destino',
+            'queue_log.queuename as fila',
+            'queue_log.duration as duracao'
+        )
+        ->where('queues.empresa_id', Auth::user()->empresa_id) // Filtrando pela empresa do usuário
+        ->where('queue_log.event', $tipo == 'recebidas' ? 'ENTERQUEUE' : ($tipo == 'atendidas' ? 'CONNECT' : 'ABANDON'))
+        ->orderBy('queue_log.time', 'desc')
+        ->limit(10)
+        ->get();
+
+    return response()->json($query);
+}
+
 
 
 

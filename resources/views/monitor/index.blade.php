@@ -122,17 +122,25 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-    const socket = io("http://93.127.212.237:4000");
+    const empresaId = {{ Auth::user()->empresa_id }};
+</script>
 
-    socket.on('fetch-unified-data-response', (data) => {
-        console.log("Recebido evento fetch-unified-data-response:", data);
+<script>
+   const socket = io("http://93.127.212.237:4000");
 
-        atualizarRamais(data.sippeers);
-        atualizarFilas(data.queueData);
-    });
+socket.on('fetch-unified-data-response', (data) => {
+    console.log("Recebido evento fetch-unified-data-response:", data);
 
-    function atualizarRamais(sippeers) {
+    // Filtra os ramais para exibir apenas os da empresa do usuário
+    const sippeersFiltrados = data.sippeers.filter(sipper => sipper.empresa_id == empresaId);
+
+    atualizarRamais(sippeersFiltrados);
+    atualizarFilas(data.queueData);
+});
+
+function atualizarRamais(sippeers) {
     const cardsContainer = document.querySelector("#sippers-cards");
     cardsContainer.innerHTML = "";
 
@@ -153,41 +161,41 @@
         card.classList.add("col-md-6", "mb-4");
         card.id = `card-${sipper.name}`;
 
-        let callingFrom = sipper.calling_from || sipper.name; // Origem sempre será o próprio ramal
+        let callingFrom = sipper.calling_from || sipper.name;
         let callingTo = sipper.calling_to || "";
 
         // Se calling_to for null, tentamos ajustar com o outro ramal ativo
         if (!callingTo && chamadasAtivas[sipper.uniqueID]?.length > 1) {
             const outraParte = chamadasAtivas[sipper.uniqueID].find(c => c.name !== sipper.name);
             if (outraParte) {
-                callingTo = outraParte.name; // O outro ramal é o destino
+                callingTo = outraParte.name;
             }
         }
 
         let badgeHTML = sipper.user_name && sipper.user_name !== "Desconhecido" 
-      ? `<span class="badge">${sipper.user_name}</span>` 
-      : ""; // Se for "Desconhecido", badgeHTML será vazio.
+          ? `<span class="badge">${sipper.user_name}</span>` 
+          : "";
 
-  card.innerHTML = `
-      <div class="card">
-          <div class="card-body">
-              <h5 class="card-title">${sipper.name}</h5>
-              ${badgeHTML} <!-- Só exibe o badge se for diferente de "Desconhecido" -->
-              <p class="card-text mt-3">
-                  <strong></strong> <span class="status">${sipper.call_state}</span><br>
-                  <strong></strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
-                  <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
-                  <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
-              </p>
-          </div>
-      </div>
-  `;
-
+        card.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">${sipper.name}</h5>
+                    ${badgeHTML}
+                    <p class="card-text mt-3">
+                        <strong></strong> <span class="status">${sipper.call_state}</span><br>
+                        <strong></strong> <span class="call-info">${callingFrom} => ${callingTo || "Desconhecido"}</span><br>
+                        <strong>Tempo de Pausa:</strong> <span class="time">${sipper.time_in_pause || "00:00:00"}</span><br>
+                        <strong>Duração:</strong> <span class="call-info">${sipper.call_duration || ""}</span><br>
+                    </p>
+                </div>
+            </div>
+        `;
 
         cardsContainer.appendChild(card);
         atualizarEstadoDoCard(sipper.name, sipper.call_state, callingFrom, callingTo);
     });
 }
+
 
 
    function atualizarEstadoDoCard(extension, callState, calling_from, calling_to) {

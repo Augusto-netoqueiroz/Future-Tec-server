@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class RamalController extends Controller
 {
@@ -27,20 +28,26 @@ class RamalController extends Controller
     }
 
     public function index()
-    {
-        $ramais = DB::table('sippeers')
-            ->where('modo', 'ramal')
-            ->leftJoin('users', 'sippeers.user_id', '=', 'users.id')
-            ->select('sippeers.id', 'sippeers.name as ramal', 'sippeers.ipaddr', 'sippeers.context', 'users.name as atendente')
-            ->get();
+{
+    $empresa_id = Auth::user()->empresa_id;
+    $empresa_nome = Auth::user()->empresa_nome;
 
-        $ramais = $ramais->map(function ($ramal) {
-            $ramal->estado = strlen($ramal->ipaddr) > 5 ? 'Online' : 'Offline';
-            return $ramal;
-        });
+    $ramais = DB::table('sippeers')
+        ->where('modo', 'ramal')
+        ->where('sippeers.empresa_id', $empresa_id) // Filtra pelos ramais da empresa
+        ->leftJoin('users', 'sippeers.user_id', '=', 'users.id')
+        ->select('sippeers.id', 'sippeers.name as ramal', 'sippeers.ipaddr', 'sippeers.context', 'users.name as atendente')
+        ->get();
 
-        return view('ramais.index', compact('ramais'));
-    }
+    // Define o estado do ramal (Online/Offline)
+    $ramais = $ramais->map(function ($ramal) {
+        $ramal->estado = strlen($ramal->ipaddr) > 5 ? 'Online' : 'Offline';
+        return $ramal;
+    });
+
+    return view('ramais.index', compact('ramais'));
+}
+
 
     public function create()
     {
@@ -76,25 +83,32 @@ public function update(Request $request, $id)
     return redirect()->route('ramais.index')->with('success', 'Ramal atualizado com sucesso!');
 }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'ramal' => 'required|string|max:255|unique:sippeers,name',
-            'senha' => 'required|string|max:255',
-            'context' => 'required|string|max:255',
-        ]);
+public function store(Request $request)
+{
+    // Obtém o ID da empresa do usuário autenticado
+    $empresa_id = Auth::user()->empresa_id;
 
-        DB::table('sippeers')->insert([
-            'name' => $request->ramal,
-            'secret' => $request->senha,
-            'host' => 'dynamic',
-            'context' => $request->context,
-            'ipaddr' => '',
-            'modo' => 'ramal', 
-        ]);
+    // Validação dos campos
+    $request->validate([
+        'ramal' => 'required|string|max:255|unique:sippeers,name',
+        'senha' => 'required|string|max:255',
+        'context' => 'required|string|max:255',
+    ]);
 
-        return redirect()->route('ramais.index')->with('success', 'Ramal criado com sucesso!');
-    }
+    // Inserção do novo ramal na empresa do usuário
+    DB::table('sippeers')->insert([
+        'name' => $request->ramal,
+        'secret' => $request->senha,
+        'host' => 'dynamic',
+        'context' => $request->context,
+        'ipaddr' => '',
+        'modo' => 'ramal',
+        'empresa_id' => $empresa_id, // Adiciona o empresa_id corretamente
+    ]);
+
+    return redirect()->route('ramais.index')->with('success', 'Ramal criado com sucesso!');
+}
+
 
     public function destroy($id)
     {
@@ -129,19 +143,23 @@ public function update(Request $request, $id)
     // Adicionando funcionalidades para Troncos
     public function listarTroncos()
     {
+        $empresa_id = Auth::user()->empresa_id; // Obtém o empresa_id do usuário logado
+    
         $troncos = DB::table('sippeers')
             ->where('type', 'friend') // Filtra apenas troncos
+            ->where('empresa_id', $empresa_id) // Filtra apenas os troncos da empresa do usuário
             ->select('id', 'name as tronco', 'host', 'context', 'ipaddr')
             ->get();
-
+    
         $troncos = $troncos->map(function ($tronco) {
             $tronco->estado = strlen($tronco->ipaddr) > 5 ? 'Online' : 'Offline';
             $tronco->ipaddr = $tronco->ipaddr ?: 'Sem IP';
             return $tronco;
         });
-
+    
         return view('troncos.index', compact('troncos'));
     }
+    
 
     public function criarTronco()
     {
@@ -149,27 +167,28 @@ public function update(Request $request, $id)
     }
 
     public function salvarTronco(Request $request)
-    {
-        $request->validate([
-            'nome' => 'required|string|max:255|unique:sippeers,name',
-            'senha' => 'required|string|max:255',
-            'context' => 'required|string|max:255',
-            'host' => 'required|string|max:255',
-        ]);
+{
+    $request->validate([
+        'nome' => 'required|string|max:255|unique:sippeers,name',
+        'senha' => 'required|string|max:255',
+        'context' => 'required|string|max:255',
+        'host' => 'nullable|string|max:255',  
+    ]);
 
-        DB::table('sippeers')->insert([
-            'name' => $request->nome,
-            'secret' => $request->senha,
-            'host' => $request->host,
-            'context' => $request->context,
-            'type' => 'friend',
-            'qualify' => 'yes',
-            'ipaddr' => '',
-            'modo' => 'tronco', 
-        ]);
+    DB::table('sippeers')->insert([
+        'name' => $request->nome,
+        'secret' => $request->senha,
+        'host' => $request->host ?? '',
+        'context' => $request->context,
+        'type' => 'friend',
+        'qualify' => 'yes',
+        'ipaddr' => '',
+        'modo' => 'tronco', 
+        'empresa_id' => Auth::user()->empresa_id, // Adicionando o empresa_id do usuário logado
+    ]);
 
-        return redirect()->route('troncos.index')->with('success', 'Tronco criado com sucesso!');
-    }
+    return redirect()->route('troncos.index')->with('success', 'Tronco criado com sucesso!');
+}
 
     public function editarTronco($id)
     {

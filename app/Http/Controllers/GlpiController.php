@@ -60,10 +60,10 @@ class GlpiController extends Controller {
     public function filterTickets(Request $request)
 {
     try {
-        $page = $request->input('page', 1); // Pega a página da requisição ou assume 1
+        $page = $request->input('page', 1); // Página atual
         $perPage = 10; // Defina quantos tickets por página
 
-        // Busca os tickets filtrados no serviço GLPI
+        // Buscar os tickets filtrados no serviço GLPI
         $response = $this->glpiService->filterTickets(
             $request->input('user_id'),
             $request->input('entity_id'),
@@ -76,7 +76,8 @@ class GlpiController extends Controller {
             return response()->json([
                 'data' => [],
                 'current_page' => $page,
-                'last_page' => 1
+                'last_page' => 1,
+                'total' => 0
             ]);
         }
 
@@ -100,17 +101,17 @@ class GlpiController extends Controller {
             ];
         }, $tickets);
 
-        // Implementação manual da paginação
+        // Criar instância do LengthAwarePaginator
         $total = count($formattedTickets);
-        $offset = ($page - 1) * $perPage;
-        $paginatedData = array_slice($formattedTickets, $offset, $perPage);
+        $paginatedData = new LengthAwarePaginator(
+            array_slice($formattedTickets, ($page - 1) * $perPage, $perPage), 
+            $total, 
+            $perPage, 
+            $page, 
+            ['path' => url()->current()]
+        );
 
-        return response()->json([
-            'data' => $paginatedData,
-            'current_page' => $page,
-            'last_page' => ceil($total / $perPage),
-            'total' => $total
-        ]);
+        return response()->json($paginatedData);
 
     } catch (\Exception $e) {
         return response()->json(['error' => 'Erro ao carregar tickets: ' . $e->getMessage()], 500);
