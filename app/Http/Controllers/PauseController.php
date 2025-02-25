@@ -217,14 +217,21 @@ public function getLastPause(Request $request)
 
 public function relatorio()
 {
-    $usuarios = User::all(); // Substitua pelo seu modelo de usuários
+    $user = auth()->user();
+
+    // Busca apenas os usuários da mesma empresa do usuário autenticado
+    $usuarios = User::where('empresa_id', $user->empresa_id)->get();
+
     return view('pauses.relatorio', compact('usuarios'));
 }
 
 public function filtrarRelatorio(Request $request)
 {
+    $user = auth()->user();
+
     $query = DB::table('user_pause_logs')
         ->join('users', 'users.id', '=', 'user_pause_logs.user_id')
+        ->where('users.empresa_id', $user->empresa_id) // Filtra apenas usuários da mesma empresa
         ->select(
             'user_pause_logs.*',
             'users.name as user_name',
@@ -243,6 +250,7 @@ public function filtrarRelatorio(Request $request)
 
     $resumo = DB::table('user_pause_logs')
         ->join('users', 'users.id', '=', 'user_pause_logs.user_id')
+        ->where('users.empresa_id', $user->empresa_id) // Filtra apenas usuários da mesma empresa
         ->select(
             'users.name as user_name',
             DB::raw("SUM(CASE WHEN pause_name = 'disponível' THEN TIMESTAMPDIFF(SECOND, started_at, end_at) ELSE 0 END) as total_disponivel"),

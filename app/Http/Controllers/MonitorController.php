@@ -29,23 +29,24 @@ class MonitorController extends Controller
 
      public function index()
 {
-    if (Auth::check()) {
-        Log::info('Usuário autenticado. Empresa ID: ' . Auth::user()->empresa_id);
-    } else {
-        Log::warning('Usuário não autenticado.');
+    if (!Auth::check()) {
+        return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
     }
 
+    $user = Auth::user(); 
+
+    Log::info('Usuário autenticado. Empresa ID: ' . $user->empresa_id);
+
     // Verifica se o empresa_id está na lista de IDs permitidos
-    $allowedCompanies = [1, 2, 3];  // IDs das empresas permitidas
-    if (Auth::check() && !in_array(Auth::user()->empresa_id, $allowedCompanies)) {
+    $allowedCompanies = [1, 2, 3];  
+    if (!in_array($user->empresa_id, $allowedCompanies)) {
         abort(403, 'Acesso não autorizado');
     }
 
-    $empresaId = Auth::user()->empresa_id; // Obtém o empresa_id do usuário autenticado
+    $empresaId = $user->empresa_id;
 
-    // Buscar os dados agregados da tabela queue_log apenas para as filas da empresa do usuário
     $dadosChamadas = DB::table('queue_log')
-        ->join('queues', 'queue_log.queuename', '=', 'queues.name') // Alterado de 'queue' para 'queuename'
+        ->join('queues', 'queue_log.queuename', '=', 'queues.name')
         ->where('queues.empresa_id', $empresaId) 
         ->whereDate('queue_log.time', today()) 
         ->selectRaw("
@@ -55,9 +56,9 @@ class MonitorController extends Controller
         ")
         ->first();
 
-
     return view('monitor.index', compact('dadosChamadas'));
 }
+
 
      
 

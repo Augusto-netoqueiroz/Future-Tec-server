@@ -10,55 +10,69 @@ class RelatorioController extends Controller
 {
     public function ligacoes(Request $request)
     {
-        // Inicia a consulta na tabela 'cdr' com junção da tabela 'cdr' para obter o 'clid' (Agente)
+        $user = auth()->user();
+        $empresa_id = $user->empresa_id;
+    
+        $ramais = DB::table('sippeers')
+            ->where('empresa_id', $empresa_id)
+            ->pluck('name')
+            ->toArray();
+    
+        $filas = DB::table('queues')
+            ->where('empresa_id', $empresa_id)
+            ->pluck('name')
+            ->toArray();
+    
         $query = DB::table('cdr')
-    ->select(
-        'calldate',
-        'src',
-        'dst',
-        'duration',
-        'uniqueid',
-        DB::raw("IFNULL(SUBSTRING_INDEX(clid, ' ', 1), '') as Agente")
-    )
-    ->orderBy('calldate', 'desc');
-
-// Filtro de pesquisa por origem, destino ou uniqueid
-if ($request->has('search') && $request->input('search') != '') {
-    $search = $request->input('search');
-    $query->where(function ($q) use ($search) {
-        $q->where('src', 'like', "%{$search}%")
-            ->orWhere('dst', 'like', "%{$search}%")
-            ->orWhere('uniqueid', 'like', "%{$search}%");
-    });
-}
-
-// Filtro por intervalo de data
-if ($request->has('start_date') && $request->has('end_date') && $request->input('start_date') != '' && $request->input('end_date') != '') {
-    $start_date = $request->input('start_date');
-    $end_date = $request->input('end_date');
-    $query->whereBetween('calldate', [$start_date, $end_date]);
-}
-
-// Executa a consulta com paginação de 20 registros por página
-$chamadas = $query->paginate(20);
-
-// Caminho base onde as gravações estão armazenadas
-$pathBase = '/var/www/projetolaravel/gravacoes/';
-
-// Para cada chamada, verifica se existe o arquivo de gravação
-foreach ($chamadas as $chamada) {
-    $fileName = $chamada->uniqueid . '.wav'; // Nome do arquivo com base no uniqueid
-    $filePath = $pathBase . $fileName;
-
-    // Verifica se o arquivo de gravação existe
-    if (file_exists($filePath)) {
-        $chamada->recordingfile = $fileName;
-    } else {
-        $chamada->recordingfile = null;
+            ->select(
+                'calldate',
+                'src',
+                'dst',
+                'duration',
+                'uniqueid',
+                'disposition',
+                'lastdata',
+                DB::raw("IFNULL(SUBSTRING_INDEX(clid, ' ', 1), '') as Agente")
+            )
+            ->where(function ($q) use ($ramais, $filas) {
+                if (!empty($ramais)) {
+                    $q->whereIn('src', $ramais)
+                      ->orWhereIn('dst', $ramais);
+                }
+                if (!empty($filas)) {
+                    $q->orWhereIn('dst', $filas);
+                }
+            })
+            ->whereRaw("disposition REGEXP '[A-Za-z]'") // Filtra apenas registros onde disposition contém letras
+            ->orderBy('calldate', 'desc');
+    
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('src', 'like', "%{$search}%")
+                  ->orWhere('dst', 'like', "%{$search}%")
+                  ->orWhere('uniqueid', 'like', "%{$search}%");
+            });
+        }
+    
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('calldate', [
+                $request->input('start_date'),
+                $request->input('end_date')
+            ]);
+        }
+    
+        $chamadas = $query->paginate(20);
+    
+        $pathBase = '/var/www/projetolaravel/gravacoes/';
+    
+        foreach ($chamadas as $chamada) {
+            $filePath = $pathBase . $chamada->uniqueid . '.wav';
+            $chamada->recordingfile = file_exists($filePath) ? $chamada->uniqueid . '.wav' : null;
+        }
+    
+        return view('relatorios.ligacoes', compact('chamadas'));
     }
-}
+    
 
-// Retorna a view com as chamadas, incluindo as gravações
-return view('relatorios.ligacoes', compact('chamadas'));
-    }
 }

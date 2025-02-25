@@ -4,17 +4,37 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class LoginReport extends Model
 {
     use HasFactory;
 
-    // Defina a tabela, se o nome da tabela não seguir o padrão
-    protected $table = 'login_logs'; // Substitua pelo nome correto da sua tabela
+    protected $table = 'login_logs';
 
-    // Relacionamento com o modelo User
+    protected $fillable = [
+        'user_id',
+        'empresa_id',
+        'ip_address',
+        'login_time',
+        'logout_time',
+        'session_duration'
+    ];
+
+    protected $casts = [
+        'login_time' => 'datetime',
+        'logout_time' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id'); // Substitua 'user_id' pela chave estrangeira correta
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 }
