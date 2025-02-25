@@ -19,6 +19,11 @@ class GlpiController extends Controller {
     
     public function index(Request $request)
     {
+
+        if (!Auth::check()) {
+            return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+        }
+        
         $userId = $request->input('user_id');
         $entityId = $request->input('entity_id');
         $startDate = $request->input('start_date');

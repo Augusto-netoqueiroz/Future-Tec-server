@@ -10,6 +10,11 @@ class RelatorioController extends Controller
 {
     public function ligacoes(Request $request)
     {
+
+        if (!Auth::check()) {
+            return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+        }
+        
         $user = auth()->user();
         $empresa_id = $user->empresa_id;
     

@@ -217,6 +217,11 @@ public function logoutUser($id)
 
     public function index()
     {
+
+        if (!Auth::check()) {
+            return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+        }
+        
         $user = auth()->user(); // Obtém o usuário autenticado
     
         $users = User::where('empresa_id', $user->empresa_id)->get(); // Filtra apenas os usuários da mesma empresa

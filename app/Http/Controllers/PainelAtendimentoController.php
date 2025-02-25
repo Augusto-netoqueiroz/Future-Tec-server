@@ -14,6 +14,10 @@ class PainelAtendimentoController extends Controller
     // Exibe a página do painel de atendimento com os ramais disponíveis
     public function index()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+        }
+        
         $userId = Auth::id();
         $empresaId = Auth::user()->empresa_id;
     

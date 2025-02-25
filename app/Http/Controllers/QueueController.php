@@ -10,6 +10,11 @@ class FilaController extends Controller
     // Exibe a página principal de filas
     public function index()
     {
+
+        if (!Auth::check()) {
+            return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+        }
+        
         $filas = DB::table('queues')->get(); // Alterado de 'queue' para 'queues'
         return view('filas.filas', compact('filas'));
     }

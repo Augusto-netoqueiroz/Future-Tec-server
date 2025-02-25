@@ -99,6 +99,10 @@ public function update(Request $request, $id)
 
     public function index()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+        }
+        
         try {
             $pauses = Pause::all();
             return response()->json($pauses);

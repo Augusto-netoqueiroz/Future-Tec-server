@@ -29,6 +29,11 @@ class RamalController extends Controller
 
     public function index()
 {
+
+    if (!Auth::check()) {
+        return redirect()->route('login'); // Redireciona para a tela de login se não estiver autenticado
+    }
+    
     $empresa_id = Auth::user()->empresa_id;
     $empresa_nome = Auth::user()->empresa_nome;
 
