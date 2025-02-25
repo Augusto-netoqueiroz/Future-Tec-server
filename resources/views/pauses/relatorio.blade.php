@@ -6,8 +6,7 @@
 
     <!-- Filtro -->
     <div class="card p-4 shadow-sm">
-        <form id="filter-form" method="POST" action="{{ route('relatorio.pausas.filtrar') }}">
-            @csrf
+        <form id="filter-form">
             <div class="row">
                 <div class="col-md-4">
                     <label class="form-label">Data Início</label>
@@ -58,39 +57,33 @@
         </thead>
         <tbody></tbody>
     </table>
+
+    <!-- Paginação -->
+    <div id="pagination-container" class="d-flex justify-content-center mt-4"></div>
 </div>
-
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('filter-form');
     const resumoTable = document.querySelector('#resumo-table tbody');
     const logsTable = document.querySelector('#logs-table tbody');
+    const paginationContainer = document.getElementById('pagination-container');
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    async function fetchData(pageUrl = "{{ route('relatorio.pausas.filtrar') }}") {
         const formData = new FormData(form);
-        
-        const response = await fetch(form.action, {
+
+        const response = await fetch(pageUrl, {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value, 'Accept': 'application/json' },
+            headers: { 
+                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                'Accept': 'application/json' 
+            },
             body: formData,
         });
 
         const data = await response.json();
-        atualizarResumo(data.resumo);
         atualizarExtrato(data.logs);
-    });
-
-    function atualizarResumo(resumo) {
-        resumoTable.innerHTML = resumo.map(row => `
-            <tr>
-                <td>${row.user_name}</td>
-                <td>${formatTime(row.total_disponivel)}</td>
-                <td>${formatTime(row.total_pausa)}</td>
-            </tr>
-        `).join('');
+        paginationContainer.innerHTML = data.pagination;
     }
 
     function atualizarExtrato(logs) {
@@ -112,6 +105,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const s = (seconds % 60).toString().padStart(2, '0');
         return `${h}:${m}:${s}`;
     }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetchData();
+    });
+
+    paginationContainer.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (e.target.tagName === 'A') {
+            fetchData(e.target.href);
+        }
+    });
+
+    fetchData(); // Carrega os dados iniciais
 });
 </script>
+
 @endsection

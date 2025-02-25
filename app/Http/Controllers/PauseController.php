@@ -20,13 +20,23 @@ class PauseController extends Controller
 {
     
     public function showpauses()
-    {
-        // Obtém todas as pausas do banco de dados (supondo que exista uma model chamada Pause)
-        $pauses = Pause::all();
+{
+    // Obtém o usuário autenticado
+    $user = Auth::user();
+
+    // Recupera o ID e o nome da empresa do usuário autenticado
+    $empresa_id = $user->empresa_id;
+    $empresa_nome = $user->empresa_nome;
+
+    // Obtém todas as pausas, exceto a de ID 6 e que pertencem à mesma empresa do usuário autenticado
+    $pauses = Pause::where('empresa_id', $empresa_id) // Filtra pela empresa do usuário autenticado
+                   ->where('id', '!=', 6) // Exclui a pausa de ID 6
+                   ->get();
     
-        // Passa a variável $pauses para a view
-        return view('pauses.pausas', compact('pauses'));
-    }
+    // Passa as variáveis $pauses, $empresa_id e $empresa_nome para a view
+    return view('pauses.pausas', compact('pauses', 'empresa_id', 'empresa_nome'));
+}
+
 
     public function create()
 {
@@ -64,11 +74,13 @@ public function store(Request $request)
     // Criação de um novo registro
     $pause = new Pause();
     $pause->name = $request->name;
+    $pause->empresa_id = Auth::user()->empresa_id; // Preenche automaticamente com o empresa_id do usuário autenticado
     $pause->save();
 
     // Redireciona com mensagem de sucesso
     return redirect()->route('Pausas.inicio')->with('success', 'Pausa criada com sucesso!');
 }
+
 
 public function edit($id)
 {
@@ -240,7 +252,8 @@ public function filtrarRelatorio(Request $request)
             'user_pause_logs.*',
             'users.name as user_name',
             DB::raw('TIMESTAMPDIFF(SECOND, started_at, end_at) as duration_seconds')
-        );
+        )
+        ->orderBy('user_pause_logs.started_at', 'desc'); // Ordenação DESC
 
     if ($request->filled('start_date') && $request->filled('end_date')) {
         $query->whereBetween('started_at', [$request->start_date, $request->end_date]);
@@ -250,25 +263,14 @@ public function filtrarRelatorio(Request $request)
         $query->where('user_pause_logs.user_id', $request->user_id);
     }
 
-    $logs = $query->get();
-
-    $resumo = DB::table('user_pause_logs')
-        ->join('users', 'users.id', '=', 'user_pause_logs.user_id')
-        ->where('users.empresa_id', $user->empresa_id) // Filtra apenas usuários da mesma empresa
-        ->select(
-            'users.name as user_name',
-            DB::raw("SUM(CASE WHEN pause_name = 'disponível' THEN TIMESTAMPDIFF(SECOND, started_at, end_at) ELSE 0 END) as total_disponivel"),
-            DB::raw("SUM(CASE WHEN pause_name != 'disponível' THEN TIMESTAMPDIFF(SECOND, started_at, end_at) ELSE 0 END) as total_pausa"),
-            DB::raw("COUNT(DISTINCT(user_pause_logs.user_id)) as total_usuarios")
-        )
-        ->groupBy('user_id')
-        ->get();
+    $logs = $query->paginate(10); // Adicionando paginação Laravel
 
     return response()->json([
-        'logs' => $logs,
-        'resumo' => $resumo,
+        'logs' => $logs->items(),
+        'pagination' => (string) $logs->appends(request()->query())->links('pagination::bootstrap-4'),
     ]);
 }
+
 
 
 
