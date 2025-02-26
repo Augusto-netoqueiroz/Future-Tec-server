@@ -10,6 +10,10 @@ class RelatorioController extends Controller
 {
     public function ligacoes(Request $request)
 {
+    if (!auth()->check()) {
+        return redirect()->route('login'); // Certifique-se de que a rota 'login' está correta
+    }
+
     $user = auth()->user();
     $empresa_id = $user->empresa_id;
 
@@ -84,4 +88,40 @@ class RelatorioController extends Controller
 
     return view('relatorios.ligacoes', compact('chamadas', 'ramais'));
 }
+
+
+public function index(Request $request)
+{
+    $user = auth()->user(); // Pegando o usuário autenticado
+    $empresaId = $user->empresa_id; // Pegando o empresa_id do usuário
+
+    // Inicia a query filtrando pela empresa do usuário
+    $query = DB::table('atividade')
+        ->join('users', 'atividade.user_id', '=', 'users.id')
+        ->select('atividade.*', 'users.name as usuario')
+        ->where('users.empresa_id', $empresaId);
+
+    // Filtros opcionais
+    if ($request->filled('acao')) {
+        $query->where('acao', 'like', '%' . $request->acao . '%');
+    }
+
+    if ($request->filled('descricao')) {
+        $query->where('descricao', 'like', '%' . $request->descricao . '%');
+    }
+
+    if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+        $query->whereBetween('created_at', [$request->data_inicio, $request->data_fim]);
+    }
+
+    // Paginação
+    $atividades = $query->paginate(10);
+
+    return view('relatorios.index', compact('atividades'));
+}
+
+
+
+
+
 }

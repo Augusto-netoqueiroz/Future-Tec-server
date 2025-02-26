@@ -92,6 +92,8 @@ Route::prefix('ramais')->name('ramais.')->group(function () {
 // Relatórios
 Route::get('/relatorios/ligacoes', [RelatorioController::class, 'ligacoes'])->name('relatorios.ligacoes');
 Route::get('/relatorios/login', [ReportController::class, 'index'])->name('login-report.index');
+Route::get('/relatorios/atividade', [RelatorioController::class, 'index'])->name('relatorios.index');
+
 
 // Filas
 Route::prefix('filas')->name('filas.')->group(function () {

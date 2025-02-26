@@ -1,134 +1,107 @@
-<!-- resources/views/dashboard/index.blade.php -->
 @extends('day.layout')
 
 @section('content')
 <div class="container">
-    <h1 class="my-4">Dashboard</h1>
+    <h1>Dashboard de Chamadas</h1>
 
     <!-- Filtros -->
-    <form action="{{ route('dashboard.index') }}" method="GET" class="mb-4">
-        <div class="row">
-            <div class="col-md-2">
-                <label for="user_id">Usuário</label>
-                <select name="user_id" id="user_id" class="form-control">
+    <div class="mb-4">
+        <form id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label for="userFilter" class="form-label">Usuário</label>
+                <select id="userFilter" class="form-select">
                     <option value="">Todos</option>
                     @foreach($users as $user)
-                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                            {{ $user->name }}
-                        </option>
+                        <option value="{{ $user->id }}">{{ $user->name }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-2">
-                <label for="ramal_id">Ramal</label>
-                <select name="ramal_id" id="ramal_id" class="form-control">
-                    <option value="">Todos</option>
-                    @foreach($ramais as $ramal)
-                        <option value="{{ $ramal->id }}" {{ request('ramal_id') == $ramal->id ? 'selected' : '' }}>
-                            {{ $ramal->name }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">Data Inicial</label>
+                <input type="date" id="startDate" class="form-control" value="{{ request('start_date', now()->toDateString()) }}">
             </div>
-            <div class="col-md-2">
-                <label for="queue_name">Fila</label>
-                <select name="queue_name" id="queue_name" class="form-control">
-                    <option value="">Todas</option>
-                    @foreach($filas as $fila)
-                        <option value="{{ $fila->name }}" {{ request('queue_name') == $fila->name ? 'selected' : '' }}>
-                            {{ $fila->name }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">Data Final</label>
+                <input type="date" id="endDate" class="form-control" value="{{ request('end_date', now()->toDateString()) }}">
             </div>
-            <div class="col-md-2">
-                <label for="start_date">Data Início</label>
-                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date') }}">
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-primary w-100" onclick="fetchFilteredData()">Filtrar</button>
             </div>
-            <div class="col-md-2">
-                <label for="end_date">Data Fim</label>
-                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date') }}">
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-secondary w-100" onclick="resetFilter()">Limpar</button>
             </div>
-            <div class="col-md-2 align-self-end">
-                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 
-    <!-- Resumo -->
-    <div class="mb-4">
-        <h3>Resumo</h3>
-        <table class="table table-bordered">
+    <!-- Tabela de Resumo de Chamadas -->
+    <h3>Resumo de Chamadas</h3>
+    <table class="table table-bordered">
+        <thead>
             <tr>
-                <th>Recebidas</th>
+                <th>Usuário</th>
+                <th>Atendidas</th>
                 <th>Perdidas</th>
                 <th>Efetuadas</th>
-                <th>Tempo Médio Atendimento</th>
-                <th>Tempo Médio Ocupação</th>
-                <th>SLA (%)</th>
-                <th>Nível de Serviço (%)</th>
             </tr>
+        </thead>
+        <tbody id="callsSummary">
+            @foreach($resumo as $item)
+                <tr>
+                    <td>{{ $item['usuario'] }}</td>
+                    <td>{{ $item['recebidas'] }}</td>
+                    <td>{{ $item['perdidas'] }}</td>
+                    <td>{{ $item['efetuadas'] }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+   <!-- Tabela de Resumo das Filas -->
+<h3>Resumo das Filas</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Fila</th>
+            <th>Recebidas</th>
+            <th>Atendidas</th>
+            <th>Abandonadas</th>
+            <th>SLA (%)</th>
+        </tr>
+    </thead>
+    <tbody id="queuesSummary">
+        @foreach($resumoFilas as $fila)
             <tr>
-                <td>{{ $resumo['recebidas'] }}</td>
-                <td>{{ $resumo['perdidas'] }}</td>
-                <td>{{ $resumo['efetuadas'] }}</td>
-                <td>{{ $resumo['tempo_medio_atendimento'] }} seg</td>
-                <td>{{ $resumo['tempo_medio_ocupacao'] }} seg</td>
-                <td>{{ $resumo['sla'] }}</td>
-                <td>{{ $resumo['nivel_servico'] }}</td>
+                <td>{{ $fila->fila }}</td>
+                <td>{{ $fila->total_recebidas }}</td>
+                <td>{{ $fila->atendidas }}</td>
+                <td>{{ $fila->abandonadas }}</td>
+                <td>{{ number_format($fila->sla, 2) }}%</td>
             </tr>
-        </table>
-        <p class="text-muted">* O resumo é baseado nos filtros aplicados.</p>
-    </div>
-
-    <!-- Vínculos -->
-    <div class="mb-4">
-        <h3>Vínculos de Agentes</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Usuário</th>
-                    <th>Ramal</th>
-                    <th>Início</th>
-                    <th>Fim</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($vinculos as $vinculo)
-                    <tr>
-                        <td>{{ $vinculo->user->name }}</td>
-                        <td>{{ $vinculo->sippeer->name }}</td>
-                        <td>{{ $vinculo->inicio_vinculo }}</td>
-                        <td>{{ $vinculo->fim_vinculo }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Logs da Fila -->
-    <div>
-        <h3>Logs da Fila</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Fila</th>
-                    <th>Evento</th>
-                    <th>Duração</th>
-                    <th>Horário</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($queueLogs as $log)
-                    <tr>
-                        <td>{{ $log->queuename }}</td>
-                        <td>{{ $log->event }}</td>
-                        <td>{{ $log->duration ?? 'N/A' }}</td>
-                        <td>{{ $log->time }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+        @endforeach
+    </tbody>
+</table>
 </div>
+
+<script>
+    function fetchFilteredData() {
+        let userId = document.getElementById('userFilter').value;
+        let startDate = document.getElementById('startDate').value;
+        let endDate = document.getElementById('endDate').value;
+        let url = new URL(window.location.href);
+
+        url.searchParams.set('user_id', userId);
+        url.searchParams.set('start_date', startDate);
+        url.searchParams.set('end_date', endDate);
+
+        window.location.href = url.toString();
+    }
+
+    function resetFilter() {
+        document.getElementById('userFilter').value = "";
+        document.getElementById('startDate').value = "{{ now()->toDateString() }}";
+        document.getElementById('endDate').value = "{{ now()->toDateString() }}";
+        fetchFilteredData();
+    }
+</script>
+
 @endsection

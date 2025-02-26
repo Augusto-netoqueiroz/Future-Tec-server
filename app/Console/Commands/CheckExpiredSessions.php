@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\LoginReport;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\UserController;
 
 class CheckExpiredSessions extends Command
 {
@@ -27,13 +28,29 @@ class CheckExpiredSessions extends Command
             return;
         }
 
+        $userController = new UserController();
+
         foreach ($expiradas as $sessao) {
+            $userId = $sessao->user_id;
+
+            if (!$userId) {
+                Log::warning("Sessão ID {$sessao->id} não tem um usuário associado.");
+                continue;
+            }
+
+            Log::info("Chamando logoutUser para User ID {$userId}");
+
+            // Chamar a função de logout do UserController passando o ID do usuário
+            $userController->logoutsistema($userId);
+
+            // Atualizar o registro no banco
             $sessao->logout_time = Carbon::now();
             $sessao->session_duration = $sessao->logout_time->diffInSeconds($sessao->login_time);
             $sessao->save();
 
-            $this->info("Sessão encerrada: ID {$sessao->id}, User ID {$sessao->user_id}, Login {$sessao->login_time}, Logout {$sessao->logout_time}, Duração {$sessao->session_duration} segundos.");
-            Log::info("Sessão encerrada: ID {$sessao->id}, User ID {$sessao->user_id}, Login {$sessao->login_time}, Logout {$sessao->logout_time}, Duração {$sessao->session_duration} segundos.");
+            Log::info("Logout bem-sucedido para User ID {$userId}, sessão ID {$sessao->id}.");
+
+            $this->info("Sessão encerrada: ID {$sessao->id}, User ID {$userId}, Login {$sessao->login_time}, Logout {$sessao->logout_time}, Duração {$sessao->session_duration} segundos.");
         }
 
         $this->info('Todas as sessões expiradas foram processadas.');

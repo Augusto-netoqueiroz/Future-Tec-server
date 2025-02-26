@@ -64,23 +64,22 @@ class MonitorController extends Controller
 
 public function getExtratoChamadas($tipo)
 {
-    $query = DB::table('queue_log')
+    return DB::table('queue_log')
         ->join('queues', DB::raw('CONVERT(queue_log.queuename USING utf8mb4) COLLATE utf8mb4_general_ci'), '=', DB::raw('queues.name COLLATE utf8mb4_general_ci'))
         ->select(
             'queue_log.time as datetime',
             'queue_log.callid as origem',
             'queue_log.agent as destino',
             'queue_log.queuename as fila',
-            'queue_log.duration as duracao'
+            DB::raw('CAST(SUBSTRING_INDEX(queue_log.data, "|", 1) AS UNSIGNED) as duracao')
         )
         ->where('queues.empresa_id', Auth::user()->empresa_id) // Filtrando pela empresa do usuário
         ->where('queue_log.event', $tipo == 'recebidas' ? 'ENTERQUEUE' : ($tipo == 'atendidas' ? 'CONNECT' : 'ABANDON'))
         ->orderBy('queue_log.time', 'desc')
         ->limit(10)
         ->get();
-
-    return response()->json($query);
 }
+
 
 
 

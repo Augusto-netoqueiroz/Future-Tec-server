@@ -23,7 +23,7 @@
         $ramalDoUsuario = $ramaisOnline->firstWhere('user_name', auth()->user()->name);
     @endphp
 
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-between mb-3">
         @if ($ramalDoUsuario)
             <form action="{{ route('desassociar-ramal') }}" method="POST">
                 @csrf
@@ -37,30 +37,25 @@
                 Associar Ramal
             </button>
         @endif
+        
+        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#minhasLigacoesModal">
+            Minhas Ligações
+        </button>
     </div>
 
-    <h2 class="fs-4 fw-bold mb-3">Chamadas Ativas</h2>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover tabela-chamadas">
-            <thead>
-                <tr>
-                    <th>Usuário</th>
-                    <th>Ramal</th>
-                    <th>Número</th>
-                    <th>Fila</th>
-                    <th>Tempo</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="chamadas-ativas">
-                <tr>
-                    <td colspan="6" class="text-center text-muted">Nenhuma chamada ativa</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Painel fixo para mostrar detalhes da última chamada -->
+    <div id="painelChamada" class="card mt-4 p-3 shadow-sm" style="display: none;">
+        <h3 class="fs-5 fw-bold">Última Chamada</h3>
+        <p><strong>Usuário:</strong> <span id="infoUsuario"></span></p>
+        <p><strong>Ramal:</strong> <span id="infoRamal"></span></p>
+        <p><strong>Número:</strong> <span id="infoNumero"></span></p>
+        <p><strong>Fila:</strong> <span id="infoFila"></span></p>
+        <p><strong>Tempo:</strong> <span id="infoTempo"></span></p>
+        <p><strong>Canal:</strong> <span id="infoChannel"></span></p>
     </div>
 </div>
 
+<!-- Modal de Associar Ramal -->
 <!-- Modal -->
 <div class="modal fade" id="ramalModal" tabindex="-1" aria-labelledby="ramalModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -89,65 +84,91 @@
     </div>
 </div>
 
+<!-- Modal de Minhas Ligações -->
+<div class="modal fade" id="minhasLigacoesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Minhas Ligações</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group" id="listaLigacoes"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
 <script>
     const socket = io("http://93.127.212.237:4000");
     const usuarioAutenticado = "{{ auth()->user()->name }}";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        carregarUltimaChamada();
+        carregarTodasLigacoes();
+    });
 
     socket.on('fetch-unified-data-response', (data) => {
         atualizarChamadas(data.sippeers);
     });
 
     function atualizarChamadas(sippeers) {
-        const chamadasAtivasTbody = document.getElementById("chamadas-ativas");
-        chamadasAtivasTbody.innerHTML = '';
-
-        let chamadas = sippeers?.filter(call => 
-            call.user_name === usuarioAutenticado && call.call_state?.toLowerCase().includes("em chamada")
-        ) || [];
-
+        let chamadas = sippeers?.filter(call => call.user_name === usuarioAutenticado) || [];
+        
         if (chamadas.length > 0) {
-            chamadas.forEach(call => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${call.user_name}</td>
-                    <td>${call.name}</td>
-                    <td>${call.calling_to}</td>
-                    <td>${call.queueName || "Sem fila"}</td>
-                    <td>${call.call_duration}</td>
-                    <td>${call.call_state}</td>
-                `;
-                chamadasAtivasTbody.appendChild(row);
+            chamadas.forEach(call => salvarLigacao(call));
+        }
+    }
+
+    function salvarLigacao(call) {
+        let ligacoes = JSON.parse(localStorage.getItem("ligacoes")) || {};
+        ligacoes[call.channel] = {
+            user_name: call.user_name,
+            name: call.name,
+            calling_to: call.calling_to,
+            queueName: call.queueName || "Sem fila",
+            call_duration: call.call_duration || "00:00",
+            channel: call.channel
+        };
+
+        localStorage.setItem("ligacoes", JSON.stringify(ligacoes));
+        atualizarPainelChamada(ligacoes[call.channel]);
+        carregarTodasLigacoes();
+    }
+
+    function carregarUltimaChamada() {
+        let ligacoes = JSON.parse(localStorage.getItem("ligacoes"));
+        if (ligacoes) {
+            let ultimaChamada = Object.values(ligacoes).pop();
+            if (ultimaChamada) atualizarPainelChamada(ultimaChamada);
+        }
+    }
+
+    function atualizarPainelChamada(call) {
+        document.getElementById("infoUsuario").textContent = call.user_name;
+        document.getElementById("infoRamal").textContent = call.name;
+        document.getElementById("infoNumero").textContent = call.calling_to;
+        document.getElementById("infoFila").textContent = call.queueName;
+        document.getElementById("infoTempo").textContent = call.call_duration;
+        document.getElementById("infoChannel").textContent = call.channel;
+        document.getElementById("painelChamada").style.display = "block";
+    }
+
+    function carregarTodasLigacoes() {
+        let ligacoes = JSON.parse(localStorage.getItem("ligacoes"));
+        let lista = document.getElementById("listaLigacoes");
+        lista.innerHTML = "";
+        
+        if (ligacoes) {
+            Object.values(ligacoes).forEach(call => {
+                let item = document.createElement("li");
+                item.classList.add("list-group-item");
+                item.innerHTML = `<strong>${call.user_name}</strong> - ${call.name} - ${call.calling_to} - ${call.queueName} - ${call.call_duration} <br> <small>Canal: ${call.channel}</small>`;
+                lista.appendChild(item);
             });
-        } else {
-            chamadasAtivasTbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhuma chamada ativa</td></tr>`;
         }
     }
 </script>
-
-<style>
-    .tabela-chamadas {
-        width: 100%;
-        max-width: 100%;
-        border-collapse: collapse;
-    }
-
-    .tabela-chamadas th {
-        background-color: #007bff;
-        color: white;
-        text-align: center;
-        padding: 10px;
-    }
-
-    .tabela-chamadas td {
-        text-align: center;
-        padding: 10px;
-    }
-
-    .modal-body .list-group-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-</style>
 @endsection

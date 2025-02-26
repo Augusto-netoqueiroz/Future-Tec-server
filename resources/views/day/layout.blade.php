@@ -665,7 +665,7 @@
 
 								<!-- Início do Menu Relatórios -->
 								<div data-kt-menu-trigger="click" class="menu-item 
-								{{ request()->routeIs('login-report.index', 'relatorios.ligacoes', 'relatorio.pausas') 
+								{{ request()->routeIs('login-report.index', 'relatorios.ligacoes', 'relatorio.pausas', 'relatorios.index') 
 					 			? 'here show' : '' }} menu-accordion">
 									<!-- Título do Menu -->
 									<span class="menu-link">
@@ -714,6 +714,17 @@
 												<span class="menu-title">Ligações</span>
 											</a>
 										</div>
+
+										<!-- inicio submenu Atividade -->
+										<div class="menu-item">
+											<a class="menu-link" href="{{ route('relatorios.index') }}">
+												<span class="menu-bullet">
+													<span class="bullet bullet-dot"></span>
+												</span>
+												<span class="menu-title">Atividade</span>
+											</a>
+										</div>
+
 									</div>
 								</div>
 								<!-- Fim do Menu Relatórios -->
@@ -721,7 +732,7 @@
 										
 										
 								<!-- Início do Menu Administração -->
-								@if(!in_array(Auth::user()->cargo, $cargosBloqueados))
+								@if(Auth::check() && !in_array(Auth::user()->cargo, $cargosBloqueados))
 								<div data-kt-menu-trigger="click" class="menu-item 
 								{{ request()->routeIs('users.index', 'Pausas.inicio','empresas.create') 
 					 			? 'here show' : '' }} menu-accordion">

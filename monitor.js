@@ -210,24 +210,23 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
             }).filter(Boolean);
 
             const finalData = enrichedSippeers.map(sipper => {
-    const ramal = sipper.name.replace("SIP/", ""); // Remove "SIP/" se existir
-    const queueName = queueMapping[ramal] || null;
-    
-    // 🔹 Busca o canal ativo correspondente ao ramal
-    const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
-
-    //console.log(`🔍 Verificando Ramal: ${sipper.name} (${ramal}), Fila: ${queueName}`);
-
-    return {
-        ...sipper,
-        call_state: activeChannel ? activeChannel.state : "Disponível",
-        call_duration: activeChannel ? activeChannel.duration : null,
-        calling_from: activeChannel ? sipper.name : null,
-        calling_to: activeChannel ? activeChannel.extension : null,
-        uniqueID: activeChannel ? activeChannel.uniqueID : null,
-        queueName: queueName  // 🔹 Adiciona a fila associada ao ramal, se existir
-    };
-});
+                const ramal = sipper.name.replace("SIP/", ""); // Remove "SIP/" se existir
+                const queueName = queueMapping[ramal]?.queueName || null;
+                
+                // 🔹 Busca o canal ativo correspondente ao ramal
+                const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
+            
+                return {
+                    ...sipper,
+                    call_state: activeChannel ? activeChannel.state : "Disponível",
+                    call_duration: activeChannel ? activeChannel.duration : null,
+                    calling_from: activeChannel ? sipper.name : null,
+                    calling_to: activeChannel ? activeChannel.extension : null,
+                    uniqueID: activeChannel ? activeChannel.uniqueID : null,
+                    queueName: queueName,  // 🔹 Adiciona a fila associada ao ramal, se existir
+                    channel: activeChannel ? activeChannel.channel : null // ✅ Adicionando o channel
+                };
+            });
 
 
             fetchQueueData(finalData);

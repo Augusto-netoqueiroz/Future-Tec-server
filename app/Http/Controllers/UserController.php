@@ -170,22 +170,60 @@ class UserController extends Controller
 public function logoutUser($id)
 {
     try {
-        // Remover a sessão do usuário pelo ID
-        DB::table('sessions')->where('user_id', $id)->delete();
-
-        // Atualizar a tabela 'agente_ramal_vinculo', encerrando o vínculo
-        DB::table('agente_ramal_vinculo')
-            ->where('agente_id', $id)
-            ->whereNull('fim_vinculo')
-            ->update(['fim_vinculo' => now()]);
-
-        // Atualizar a tabela 'queue_members', removendo o interface
-        DB::table('queue_members')->where('user_id', $id)->update(['interface' => null]);
-
         // Obter o usuário pelo ID
         $user = User::find($id);
 
         if ($user) {
+            // Atualiza o último log de pausa do usuário, preenchendo a coluna end_at
+            $currentPauseLogId = $user->current_pause_log_id;
+            if ($currentPauseLogId) {
+                DB::table('user_pause_logs')
+                    ->where('id', $currentPauseLogId)
+                    ->whereNull('end_at')
+                    ->update(['end_at' => now()]);
+            }
+
+            // Atualiza o log de login
+            $loginLog = DB::table('login_logs')
+                ->where('user_id', $user->id)
+                ->whereNull('logout_time')
+                ->orderBy('login_time', 'desc')
+                ->first();
+
+            if ($loginLog) {
+                $loginTime = Carbon::parse($loginLog->login_time);
+                $logoutTime = Carbon::now();
+                $sessionDuration = $loginTime->diffInSeconds($logoutTime);
+
+                DB::table('login_logs')
+                    ->where('id', $loginLog->id)
+                    ->update([
+                        'logout_time' => $logoutTime,
+                        'session_duration' => $sessionDuration,
+                    ]);
+            }
+
+            // Limpa o vínculo do ramal
+            DB::table('queue_members')->where('user_id', $user->id)->update(['interface' => null]);
+
+            DB::table('agente_ramal_vinculo')
+                ->where('agente_id', $user->id)
+                ->whereNull('fim_vinculo')
+                ->update(['fim_vinculo' => Carbon::now()]);
+
+            DB::table('sippeers')
+                ->where('user_id', $user->id)
+                ->orWhere('user_name', $user->name)
+                ->update(['user_id' => null, 'user_name' => null]);
+
+            // Atualiza o usuário para remover a pausa atual e o ID do log de pausa
+            DB::table('users')
+                ->where('id', $user->id)
+                ->update(['pause' => null, 'current_pause_log_id' => null]);
+
+            // Remover a sessão do usuário pelo ID
+            DB::table('sessions')->where('user_id', $id)->delete();
+
             // Registrar atividade
             DB::table('atividade')->insert([
                 'user_id'   => Auth::id(),
@@ -195,15 +233,16 @@ public function logoutUser($id)
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        }
 
-        // Se o usuário encerrado for o mesmo autenticado, desconecta e redireciona para o login
-        if ($user && Auth::id() == $id) {
-            Auth::logout(); // Desconectar o usuário atual
-            session()->invalidate(); // Invalidar a sessão
-            session()->regenerateToken(); // Regenerar o token CSRF
+            
 
-            return redirect()->route('login')->with('success', 'Sua sessão foi encerrada.');
+            // Se o usuário encerrado for o mesmo autenticado, desconecta e redireciona para o login
+            if (Auth::id() == $id) {
+                Auth::logout();
+                session()->invalidate();
+                session()->regenerateToken();
+                return redirect()->route('login')->with('success', 'Sua sessão foi encerrada.');
+            }
         }
 
         return redirect()->route('users.index')->with('success', 'Sessão encerrada com sucesso.');
@@ -211,6 +250,93 @@ public function logoutUser($id)
         return redirect()->route('users.index')->with('error', 'Erro ao encerrar a sessão: ' . $e->getMessage());
     }
 }
+
+
+
+public function logoutsistema($id)
+{
+    try {
+        // Obter o usuário pelo ID
+        $user = User::find($id);
+
+        if ($user) {
+            // Atualiza o último log de pausa do usuário, preenchendo a coluna end_at
+            $currentPauseLogId = $user->current_pause_log_id;
+            if ($currentPauseLogId) {
+                DB::table('user_pause_logs')
+                    ->where('id', $currentPauseLogId)
+                    ->whereNull('end_at')
+                    ->update(['end_at' => now()]);
+            }
+
+            // Atualiza o log de login
+            $loginLog = DB::table('login_logs')
+                ->where('user_id', $user->id)
+                ->whereNull('logout_time')
+                ->orderBy('login_time', 'desc')
+                ->first();
+
+            if ($loginLog) {
+                $loginTime = Carbon::parse($loginLog->login_time);
+                $logoutTime = Carbon::now();
+                $sessionDuration = $loginTime->diffInSeconds($logoutTime);
+
+                DB::table('login_logs')
+                    ->where('id', $loginLog->id)
+                    ->update([
+                        'logout_time' => $logoutTime,
+                        'session_duration' => $sessionDuration,
+                    ]);
+            }
+
+            // Limpa o vínculo do ramal
+            DB::table('queue_members')->where('user_id', $user->id)->update(['interface' => null]);
+
+            DB::table('agente_ramal_vinculo')
+                ->where('agente_id', $user->id)
+                ->whereNull('fim_vinculo')
+                ->update(['fim_vinculo' => Carbon::now()]);
+
+            DB::table('sippeers')
+                ->where('user_id', $user->id)
+                ->orWhere('user_name', $user->name)
+                ->update(['user_id' => null, 'user_name' => null]);
+
+            // Atualiza o usuário para remover a pausa atual e o ID do log de pausa
+            DB::table('users')
+                ->where('id', $user->id)
+                ->update(['pause' => null, 'current_pause_log_id' => null]);
+
+            // Remover a sessão do usuário pelo ID
+            DB::table('sessions')->where('user_id', $id)->delete();
+
+            
+
+            // Registrar atividade quando o sistema finaliza a sessão automaticamente
+            DB::table('atividade')->insert([
+                'user_id'   => $user->id,
+                'acao'      => 'Logout Automático',
+                'descricao' => "Sistema finalizou automaticamente a sessão do usuário $user->name.",
+                'ip'        => '127.0.0.1', // IP padrão para ações do sistema
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Se o usuário encerrado for o mesmo autenticado, desconecta e redireciona para o login
+            if (Auth::id() == $id) {
+                Auth::logout();
+                session()->invalidate();
+                session()->regenerateToken();
+                return redirect()->route('login')->with('success', 'Sua sessão foi encerrada.');
+            }
+        }
+
+        return redirect()->route('users.index')->with('success', 'Sessão encerrada com sucesso.');
+    } catch (\Exception $e) {
+        return redirect()->route('users.index')->with('error', 'Erro ao encerrar a sessão: ' . $e->getMessage());
+    }
+}
+
 
     
 

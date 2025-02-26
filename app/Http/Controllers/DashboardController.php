@@ -7,102 +7,92 @@ use App\Models\Sippeer;
 use App\Models\AgenteRamalVinculo;
 use App\Models\Cdr;
 use App\Models\QueueLog;
-use App\Models\Queue; // Adicionar o modelo Queue
+use App\Models\Queue;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Recebendo os filtros
+        $user = auth()->user();
+        $empresaId = $user->empresa_id;
+
         $userId = $request->input('user_id');
-        $ramalId = $request->input('ramal_id');
-        $queueName = $request->input('queue_name');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        $startDate = $request->input('start_date', now()->toDateString());
+        $endDate = $request->input('end_date', now()->toDateString());
 
-        // Passo 1 - Buscar usuários
-        $users = User::select('id', 'name')->get();
+        $users = User::where('empresa_id', $empresaId)->select('id', 'name')->get();
+        $ramais = Sippeer::where('modo', 'ramal')->where('empresa_id', $empresaId)->select('id', 'name')->get();
+        $filas = Queue::where('empresa_id', $empresaId)->select('id', 'name')->get();
 
-        // Passo 2 - Buscar ramais
-        $ramais = Sippeer::where('modo', 'ramal')->select('id', 'name')->get();
-
-        // Passo 3 - Buscar filas
-        $filas = Queue::select('id', 'name')->get();
-
-        // Passo 4 - Buscar vínculos de agentes com ramais no período
-        $vinculos = AgenteRamalVinculo::with(['user', 'sippeer'])
+        $vinculos = AgenteRamalVinculo::whereHas('user', function ($query) use ($empresaId) {
+                $query->where('empresa_id', $empresaId);
+            })
             ->when($userId, function ($query) use ($userId) {
                 $query->where('agente_id', $userId);
             })
-            ->when($ramalId, function ($query) use ($ramalId) {
-                $query->where('ramal_id', $ramalId);
-            })
-            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('inicio_vinculo', [$startDate, $endDate]);
-            })
             ->get();
 
-        // Passo 5 - Buscar dados de chamadas (CDR) no período
-        $chamadas = Cdr::when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('calldate', [$startDate, $endDate]);
-        })
-        ->when($ramalId, function ($query) use ($ramalId) {
-            $query->where('src', $ramalId);
-        })
-        ->get();
+        $resumo = $this->calcularResumo($vinculos, $startDate, $endDate);
+        $resumoFilas = $this->calcularResumoFilas($empresaId, $startDate, $endDate);
 
-        // Passo 6 - Buscar logs da fila (QueueLog)
-        $queueLogs = QueueLog::when($queueName, function ($query) use ($queueName) {
-            $query->where('queuename', $queueName);
-        })
-        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('time', [$startDate, $endDate]);
-        })
-        ->get();
-
-        // Calcular métricas do resumo
-        $resumo = $this->calcularResumo($chamadas, $queueLogs);
-
-        // Retornar dados para a view
-        return view('dashboard.index', compact('users', 'ramais', 'filas', 'vinculos', 'resumo', 'queueLogs'));
+        return view('dashboard.index', compact('users', 'ramais', 'filas', 'vinculos', 'resumo', 'resumoFilas'));
     }
 
-    private function calcularResumo($chamadas, $queueLogs)
+    private function calcularResumo($vinculos, $startDate, $endDate)
     {
-        $recebidas = $chamadas->where('disposition', 'ANSWERED')->count();
-        $perdidas = $chamadas->where('disposition', 'NO ANSWER')->count();
-        $efetuadas = $chamadas->whereNotNull('dst')->count();
+        $resumo = [];
+        $dadosUsuarios = [];
 
-        $tempoMedioAtendimento = round($chamadas->where('disposition', 'ANSWERED')->avg('billsec'), 2);
-        $tempoMedioEspera = round($queueLogs->where('event', 'WAIT_TIME')->avg('duration'), 2);
-        $sla = $this->calcularSLA($queueLogs);
-        $nivelDeServico = $this->calcularNivelServico($queueLogs);
+        foreach ($vinculos as $vinculo) {
+            $ramal = $vinculo->sippeer->name;
+            $userName = $vinculo->user->name;
 
-        return [
-            'recebidas' => $recebidas,
-            'perdidas' => $perdidas,
-            'efetuadas' => $efetuadas,
-            'tempo_medio_atendimento' => $tempoMedioAtendimento,
-            'tempo_medio_ocupacao' => $tempoMedioEspera, // Ajustar conforme necessário
-            'sla' => $sla,
-            'nivel_servico' => $nivelDeServico,
-        ];
+            if (!isset($dadosUsuarios[$userName])) {
+                $dadosUsuarios[$userName] = [
+                    'usuario' => $userName,
+                    'recebidas' => 0,
+                    'perdidas' => 0,
+                    'efetuadas' => 0,
+                ];
+            }
+
+            $dadosUsuarios[$userName]['recebidas'] += Cdr::where('dst', $ramal)->where('disposition', 'ANSWERED')
+                ->whereBetween('calldate', [$startDate, $endDate])->count();
+
+            $dadosUsuarios[$userName]['perdidas'] += Cdr::where('dst', $ramal)->where('disposition', 'NO ANSWER')
+                ->whereBetween('calldate', [$startDate, $endDate])->count();
+
+            $dadosUsuarios[$userName]['efetuadas'] += Cdr::where('src', $ramal)
+                ->whereBetween('calldate', [$startDate, $endDate])->count();
+        }
+
+        return array_values($dadosUsuarios);
     }
 
-    private function calcularSLA($queueLogs)
+    private function calcularResumoFilas($empresaId, $startDate, $endDate)
     {
-        $answered = $queueLogs->where('event', 'CONNECT')->count();
-        $total = $queueLogs->count();
-        return $total > 0 ? round(($answered / $total) * 100, 2) : 0;
+        // Define o tempo limite para calcular o SLA (em segundos)
+        $slaLimit = 20; 
+    
+        return QueueLog::join('queues', 'queue_log.queuename', '=', \DB::raw("queues.queue_name COLLATE utf8mb4_unicode_ci"))
+            ->where('queues.empresa_id', $empresaId)
+            ->whereBetween('queue_log.time', [$startDate, $endDate])
+            ->selectRaw('
+                queues.name as fila,
+                COUNT(CASE WHEN queue_log.event = "ENTERQUEUE" THEN 1 END) as total_recebidas,
+                COUNT(CASE WHEN queue_log.event = "CONNECT" THEN 1 END) as atendidas,
+                COUNT(CASE WHEN queue_log.event = "ABANDON" THEN 1 END) as abandonadas,
+                COUNT(CASE 
+                    WHEN queue_log.event = "CONNECT" 
+                    AND CAST(SUBSTRING_INDEX(queue_log.data, "|", 1) AS UNSIGNED) <= ? 
+                THEN 1 END) * 100.0 
+                / NULLIF(COUNT(CASE WHEN queue_log.event = "ENTERQUEUE" THEN 1 END), 0) as sla
+            ', [$slaLimit])
+            ->groupBy('queues.name')
+            ->get();
     }
+    
 
-    private function calcularNivelServico($queueLogs)
-    {
-        $answeredWithinThreshold = $queueLogs->where('event', 'CONNECT')
-            ->where('duration', '<=', 20) // Exemplo: 20 segundos de limite
-            ->count();
-        $total = $queueLogs->count();
-        return $total > 0 ? round(($answeredWithinThreshold / $total) * 100, 2) : 0;
-    }
+
 }
