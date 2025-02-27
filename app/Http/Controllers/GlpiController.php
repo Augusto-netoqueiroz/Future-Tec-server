@@ -10,6 +10,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+use Illuminate\Support\Facades\Http; // Importação correta
+use Carbon\Carbon;
+
 class GlpiController extends Controller {
     protected $glpiService;
 
@@ -367,6 +370,143 @@ public function deleteTicket($id) {
 }
 
     
+
+
+  
+
+public function sendDailyTicketSummary()
+{
+    try {
+        // Define o intervalo de datas para o dia anterior com hora específica
+        $startDate = Carbon::yesterday()->startOfDay()->addSecond()->toDateTimeString();  // 00:00:01
+        $endDate = Carbon::yesterday()->endOfDay()->subSecond()->toDateTimeString();      // 23:59:59
+
+        // Buscar os tickets do dia anterior
+        $response = $this->glpiService->filterTickets(null, null, $startDate, $endDate);
+
+        if (empty($response['data']) || !is_array($response['data'])) {
+            return response()->json(['message' => 'Nenhum ticket encontrado para o dia anterior.']);
+        }
+
+        $tickets = $response['data'];
+
+        // Inicializa os contadores
+        $entityCounts = [];
+        $statusCounts = [];
+        $originCounts = [];
+        $userCounts = [];
+
+        // Buscar todos os usuários e extrair apenas id e name
+        $users = $this->glpiService->getUsers();
+        $userNames = [];
+        
+        foreach ($users as $user) {
+            // Extrair apenas id e name dos usuários
+            $userNames[$user['id']] = $user['name'];
+        }
+
+        // Contagem e categorização dos tickets
+        foreach ($tickets as $ticket) {
+            // Extrair o título do ticket
+            $title = $ticket["1"] ?? 'N/A'; // Título do ticket
+
+            // Extrair origem e status do título com uma abordagem mais flexível
+            preg_match('/Origem:\s*([^\s]+)[^\n]*Status:\s*([^\s]+)/', $title, $matches);
+
+            $origin = isset($matches[1]) ? trim($matches[1]) : 'N/A'; // Origem
+            $status = isset($matches[2]) ? trim($matches[2]) : 'N/A'; // Status
+
+            // Definir emojis para origem e status
+            if ($origin === 'TELEFONE') {
+                $origin = "📞 TELEFONE";
+            } elseif ($origin === 'CHAT') {
+                $origin = "💻 CHAT";
+            }
+
+            if ($status === 'SOLUCIONADO') {
+                $status = "✅ SOLUCIONADO";
+            } elseif ($status === 'PENDENTE') {
+                $status = "❌ PENDENTE";
+            }
+
+            // Entidade
+            $entity = $ticket["80"] ?? 'N/A';
+            $entityCounts[$entity] = ($entityCounts[$entity] ?? 0) + 1;
+
+            // Status
+            $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
+
+            // Origem
+            $originCounts[$origin] = ($originCounts[$origin] ?? 0) + 1;
+
+            // Usuário que registrou o ticket
+            $userId = $ticket["4"] ?? 'N/A';
+
+            // Procurar nome do usuário pelo ID
+            $userName = $userNames[$userId] ?? 'Desconhecido';
+
+            $userCounts[$userName] = ($userCounts[$userName] ?? 0) + 1;
+        }
+
+        // Organizando os 5 usuários que mais registraram tickets
+        arsort($userCounts);
+        $topUsers = array_slice($userCounts, 0, 5, true);
+
+        // Gerar o resumo
+        $summary = "📋 *Resumo de Tickets - " . Carbon::yesterday()->format('d/m/Y') . "*\n\n";
+        $summary .= "🔹 *Total de Tickets:* " . count($tickets) . "\n\n";
+
+        // Contagem por Entidade
+        foreach ($entityCounts as $entity => $count) {
+            $summary .= "🔸 *$entity:* $count\n";
+        }
+
+        $summary .= "\n";
+
+        // Contagem por Status
+        foreach ($statusCounts as $status => $count) {
+            $summary .= "*$status:* $count\n";
+        }
+
+        $summary .= "\n";
+
+        // Contagem por Origem
+        foreach ($originCounts as $origin => $count) {
+            $summary .= "*$origin:* $count\n";
+        }
+
+        $summary .= "\n";
+
+        // Top 5 Usuários
+        $summary .= "🔝 *Top 5 Usuários que mais registraram Tickets:*\n";
+        foreach ($topUsers as $user => $count) {
+            $summary .= "👤 $user - $count tickets\n";
+        }
+
+        // Dados para a API do WhatsApp
+        $whatsappData = [
+            'number' => '120363411854834117@g.us', // Substituir pelo número desejado
+            'body' => $summary,
+            'saveOnTicket' => true,
+            'linkPreview' => true
+        ];
+
+        // Enviar o resumo via API do WhatsApp
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . env('WHATSAPP_API_TOKEN'),
+            'Content-Type' => 'application/json'
+        ])->post('https://chat.core.bsb.br:443/backend/api/messages/send', $whatsappData);
+
+        if ($response->successful()) {
+            return response()->json(['message' => 'Resumo enviado com sucesso!']);
+        } else {
+            return response()->json(['error' => 'Falha ao enviar resumo.', 'details' => $response->body()], 500);
+        }
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erro ao processar tickets: ' . $e->getMessage()], 500);
+    }
+}
 
     
     

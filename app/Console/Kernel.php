@@ -24,5 +24,7 @@ class Kernel extends ConsoleKernel
     {
         // Aqui você agenda os comandos personalizados
         $schedule->command('sessions:check-expired')->everyMinute();
+        $schedule->command('send:daily-ticket-summary')->dailyAt('08:00');
+        
     }
 }

@@ -268,3 +268,6 @@ Route::get('/tickets/{id}/edit', [GlpiController::class, 'edit'])->name('tickets
 
 Route::get('/empresas/create', [UserController::class, 'createEmpresa'])->name('empresas.create');
 Route::post('/empresas/store', [UserController::class, 'storeEmpresa'])->name('empresas.store');
+
+
+Route::get('/tickets/send-summary', [GlpiController::class, 'sendDailyTicketSummary']);

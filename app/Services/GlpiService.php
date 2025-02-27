@@ -141,7 +141,7 @@ public function filterTickets($userId = null, $entityId = null, $startDate = nul
     }
 
     $params = [
-        'range' => '0-499', // Limite de resultados
+        'range' => '0-999', // Limite de resultados
         
     ];
 
@@ -192,7 +192,7 @@ public function filterTickets($userId = null, $entityId = null, $startDate = nul
         'Content-Type'  => 'application/json',
     ])->post($url, [
         'criteria' => $criteria,
-        'range' => '0-100',
+        'range' => '0-999',
         'order' => 'DESC',
         'sort' => '15',
     ]);
