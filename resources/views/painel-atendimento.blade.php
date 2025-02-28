@@ -43,7 +43,6 @@
         </button>
     </div>
 
-    <!-- Painel fixo para mostrar detalhes da última chamada -->
     <div id="painelChamada" class="card mt-4 p-3 shadow-sm" style="display: none;">
         <h3 class="fs-5 fw-bold">Última Chamada</h3>
         <p><strong>Usuário:</strong> <span id="infoUsuario"></span></p>
@@ -56,7 +55,6 @@
 </div>
 
 <!-- Modal de Associar Ramal -->
-<!-- Modal -->
 <div class="modal fade" id="ramalModal" tabindex="-1" aria-labelledby="ramalModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -104,70 +102,105 @@
 <script>
     const socket = io("http://93.127.212.237:4000");
     const usuarioAutenticado = "{{ auth()->user()->name }}";
+    const csrfToken = "{{ csrf_token() }}";
+    const status = "Em Chamada";
 
     document.addEventListener("DOMContentLoaded", () => {
-        carregarUltimaChamada();
         carregarTodasLigacoes();
     });
 
     socket.on('fetch-unified-data-response', (data) => {
-        atualizarChamadas(data.sippeers);
-    });
+        console.log("Dados Recebidos:", data);
 
-    function atualizarChamadas(sippeers) {
-        let chamadas = sippeers?.filter(call => call.user_name === usuarioAutenticado) || [];
-        
-        if (chamadas.length > 0) {
+        if (!data.sippeers) {
+            console.error("Sippeers não encontrado!");
+            return;
+        }
+
+        const chamadas = data.sippeers.filter(call => call.user_name === usuarioAutenticado && call.call_state === status );
+        console.log(`Chamadas encontradas para ${usuarioAutenticado}:`, chamadas);
+
+        if (chamadas.length) {
             chamadas.forEach(call => salvarLigacao(call));
         }
+    });
+    
+    const chamadasAtivas = {}; // Armazena chamadas ativas para evitar múltiplos salvamentos
+
+function salvarLigacao(call) {
+    if (!call || !call.user_name || !call.channel) {
+        console.error("Call inválida:", call);
+        return;
     }
 
-    function salvarLigacao(call) {
-        let ligacoes = JSON.parse(localStorage.getItem("ligacoes")) || {};
-        ligacoes[call.channel] = {
-            user_name: call.user_name,
-            name: call.name,
-            calling_to: call.calling_to,
-            queueName: call.queueName || "Sem fila",
-            call_duration: call.call_duration || "00:00",
-            channel: call.channel
+    const callId = call.channel; // Usa o canal como identificador único
+
+    if (!chamadasAtivas[callId]) {
+        // Primeira vez que essa chamada aparece, salva imediatamente
+        chamadasAtivas[callId] = {
+            salvaInicial: false,
+            ultimaLigacao: call,
+            ativa: true // Marca como ligação ativa
         };
 
-        localStorage.setItem("ligacoes", JSON.stringify(ligacoes));
-        atualizarPainelChamada(ligacoes[call.channel]);
-        carregarTodasLigacoes();
+        registrarLigacao(call); // Salva a primeira ocorrência
+        chamadasAtivas[callId].salvaInicial = true;
+    } else {
+        // Atualiza os dados da chamada, mas não salva no momento
+        chamadasAtivas[callId].ultimaLigacao = call;
     }
 
-    function carregarUltimaChamada() {
-        let ligacoes = JSON.parse(localStorage.getItem("ligacoes"));
-        if (ligacoes) {
-            let ultimaChamada = Object.values(ligacoes).pop();
-            if (ultimaChamada) atualizarPainelChamada(ultimaChamada);
+    // Verifica se a chamada foi encerrada
+    if (call.call_state !== "Em Chamada") {
+        if (chamadasAtivas[callId].ativa) {
+            registrarLigacao(chamadasAtivas[callId].ultimaLigacao); // Salva a última ocorrência
+            chamadasAtivas[callId].ativa = false; // Marca como finalizada
         }
-    }
 
-    function atualizarPainelChamada(call) {
-        document.getElementById("infoUsuario").textContent = call.user_name;
-        document.getElementById("infoRamal").textContent = call.name;
-        document.getElementById("infoNumero").textContent = call.calling_to;
-        document.getElementById("infoFila").textContent = call.queueName;
-        document.getElementById("infoTempo").textContent = call.call_duration;
-        document.getElementById("infoChannel").textContent = call.channel;
-        document.getElementById("painelChamada").style.display = "block";
+        delete chamadasAtivas[callId]; // Remove do cache após salvar
     }
+}
 
-    function carregarTodasLigacoes() {
-        let ligacoes = JSON.parse(localStorage.getItem("ligacoes"));
-        let lista = document.getElementById("listaLigacoes");
-        lista.innerHTML = "";
-        
-        if (ligacoes) {
-            Object.values(ligacoes).forEach(call => {
+function registrarLigacao(call) {
+    console.log("Salvando Ligação:", call);
+
+    axios.post("/calls/store", {
+        user_name: call.user_name,
+        ramal: call.name,
+        calling_to: call.calling_to,
+        queue_name: call.queueName || "Sem fila",
+        call_duration: call.call_duration || "00:00",
+        channel: call.channel
+    }, {
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            "Content-Type": "application/json"
+        }
+    })
+    .then(response => {
+        console.log("Ligação salva com sucesso:", response.data);
+    })
+    .catch(error => {
+        console.error("Erro ao salvar ligação:", error.response?.data || error.message);
+    });
+}
+
+    
+    async function carregarTodasLigacoes() {
+        try {
+            const response = await fetch("/calls/user");
+            const ligacoes = await response.json();
+            const lista = document.getElementById("listaLigacoes");
+            lista.innerHTML = "";
+
+            ligacoes.forEach(call => {
                 let item = document.createElement("li");
                 item.classList.add("list-group-item");
-                item.innerHTML = `<strong>${call.user_name}</strong> - ${call.name} - ${call.calling_to} - ${call.queueName} - ${call.call_duration} <br> <small>Canal: ${call.channel}</small>`;
+                item.innerHTML = `<strong>${call.user_name}</strong> - ${call.ramal} - ${call.calling_to} - ${call.queue_name} - ${call.call_duration} <br> <small>Canal: ${call.channel}</small>`;
                 lista.appendChild(item);
             });
+        } catch (error) {
+            console.error("Erro ao carregar ligações:", error);
         }
     }
 </script>

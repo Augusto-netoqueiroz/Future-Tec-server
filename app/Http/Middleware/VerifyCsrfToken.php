@@ -20,12 +20,16 @@ class VerifyCsrfToken
 
     protected $except = [
         'finish', // Adicione a rota que você quer desabilitar a verificação CSRF
+        '/callcreat',
+        'callcreat',
     ];
 
     protected function shouldSkip(Request $request)
 {
     return in_array($request->route()->uri(), [
         'finish', // Rota que não deve passar pela verificação CSRF
+        '/callcreat',
+        'callcreat',
     ]);
 }
 

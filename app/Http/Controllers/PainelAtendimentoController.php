@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Call;
+
+
 
 class PainelAtendimentoController extends Controller
 {
@@ -133,5 +136,31 @@ class PainelAtendimentoController extends Controller
         return redirect()->route('painel-atendimento')->with('error', 'Nenhum ramal encontrado para desassociar.');
     }
 }
+
+
+
+public function storeCall(Request $request)
+    {
+        
+        $call = Call::create([
+            'user_name' => $request->user_name,
+            'ramal' => $request->ramal,
+            'calling_to' => $request->calling_to,
+            'queue_name' => $request->queue_name ?? 'Sem fila',
+            'call_duration' => $request->call_duration ?? '00:00',
+            'channel' => $request->channel,
+        ]);
+
+        return response()->json(['message' => 'Ligação salva com sucesso!', 'call' => $call]);
+    }
+
+    public function getUserCalls()
+    {
+        $userName = auth()->user()->name;
+        $calls = Call::where('user_name', $userName)->orderByDesc('created_at')->get();
+        
+        return response()->json($calls);
+    }
+
 
 }

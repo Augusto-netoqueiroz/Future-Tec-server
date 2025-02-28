@@ -271,3 +271,16 @@ Route::post('/empresas/store', [UserController::class, 'storeEmpresa'])->name('e
 
 
 Route::get('/tickets/send-summary', [GlpiController::class, 'sendDailyTicketSummary']);
+
+
+Route::post('/callcreat', [PainelAtendimentoController::class, 'storeCall'])->name('callcreat.store');
+Route::get('/calls', [PainelAtendimentoController::class, 'getUserCalls'])->name('calls.getUserCalls');
+
+
+Route::post('/calls/store', [PainelAtendimentoController::class, 'storeCall'])->name('calls.store');
+Route::get('/calls/user', [PainelAtendimentoController::class, 'getUserCalls']);
+
+
+Route::get('/generate-csrf-token', function() {
+    return response()->json(['csrf_token' => csrf_token()]);
+});
