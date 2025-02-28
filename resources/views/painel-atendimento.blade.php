@@ -125,6 +125,8 @@
         }
     });
     
+   
+
     const chamadasAtivas = {}; // Armazena chamadas ativas para evitar múltiplos salvamentos
 
 function salvarLigacao(call) {
@@ -162,13 +164,13 @@ function salvarLigacao(call) {
 }
 
 function registrarLigacao(call) {
-    console.log("Salvando Ligação:", call);
+
 
     axios.post("/calls/store", {
         user_name: call.user_name,
         ramal: call.name,
         calling_to: call.calling_to,
-        queue_name: call.queueName || "Sem fila",
+        queue_name: call.queueName, // Agora só adiciona se realmente existir
         call_duration: call.call_duration || "00:00",
         channel: call.channel
     }, {
@@ -184,6 +186,8 @@ function registrarLigacao(call) {
         console.error("Erro ao salvar ligação:", error.response?.data || error.message);
     });
 }
+
+
 
     
     async function carregarTodasLigacoes() {
