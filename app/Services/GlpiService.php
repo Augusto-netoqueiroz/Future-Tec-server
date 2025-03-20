@@ -5,7 +5,7 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Https;
 
 class GlpiService {
     protected $client;
@@ -26,50 +26,79 @@ class GlpiService {
             ]
         ]);
 
-        $this->sessionToken = $this->initSession();
+        $this->sessionToken = null;
     }
 
-    // Iniciar sessão na API do GLPI
-    public function initSession()
-{
-    $response = Http::withHeaders([
-        'App-Token'    => env('GLPI_APP_TOKEN'),
-        'Authorization' => 'user_token ' . env('GLPI_USER_TOKEN'),
-    ])->get(env('GLPI_URL') . 'initSession');
-
-    if ($response->failed()) {
-        throw new \Exception('Erro ao iniciar sessão no GLPI: ' . $response->body());
+    protected function getSessionToken() {
+        if (!$this->sessionToken) {
+            $this->sessionToken = $this->initSession();
+        }
+        return $this->sessionToken;
     }
 
-    $data = $response->json();
-    
-    // Armazena o session_token na sessão do Laravel
-    session(['glpi_session_token' => $data['session_token']]);
+    public function initSession() {
+        if (session('glpi_session_token')) {
+            return session('glpi_session_token');
+        }
 
-    return $data;
-}
-
-public function createTicket($title, $description, $user_id, $entities_id, $category_id, $status) {
-    $response = $this->client->post('Ticket', [
-        'headers' => [
+        $response = Http::withHeaders([
             'App-Token'    => env('GLPI_APP_TOKEN'),
-            'Session-Token' => $this->sessionToken,
-            'Content-Type'  => 'application/json'
-        ],
-        'json' => [
-            'input' => [
-                'name'               => $title,
-                'content'            => $description,
-                'users_id_recipient' => $user_id,
-                'entities_id'        => $entities_id,
-                'itilcategories_id'  => $category_id,
-                'status'             => $status // Enviando o status correto
-            ]
-        ]
-    ]);
+            'Authorization' => 'user_token ' . env('GLPI_USER_TOKEN'),
+        ])->get(env('GLPI_URL') . 'initSession');
 
-    return json_decode($response->getBody(), true);
-}
+        if ($response->failed()) {
+            throw new \Exception('Erro ao iniciar sessão no GLPI: ' . $response->body());
+        }
+
+        $data = $response->json();
+        session(['glpi_session_token' => $data['session_token']]);
+
+        return $data['session_token'];
+    }
+
+
+
+
+ public function createTicket($title, $description, $user_id, $entities_id, $category_id, $status) {
+        $response = $this->client->post('Ticket', [
+            'headers' => [
+                'App-Token'    => env('GLPI_APP_TOKEN'),
+                'Session-Token' => $this->getSessionToken(),
+                'Content-Type'  => 'application/json'
+            ],
+            'json' => [
+                'input' => [
+                    'name'               => $title,
+                    'content'            => $description,
+                    'users_id_recipient' => $user_id,
+                    'entities_id'        => $entities_id,
+                    'itilcategories_id'  => $category_id,
+                    'status'             => $status
+                ]
+            ]
+        ]);
+
+        return json_decode($response->getBody(), true);
+    }
+
+    // Os demais métodos seguem a mesma lógica, trocando "$this->sessionToken" por "$this->getSessionToken()".
+    // Exemplo simplificado:
+
+    public function getCategories() {
+        $response = $this->client->get('ITILCategory', [
+            'headers' => [
+                'App-Token'    => env('GLPI_APP_TOKEN'),
+                'Session-Token' => $this->getSessionToken(),
+            ],
+        ]);
+
+        return json_decode($response->getBody(), true);
+    }
+
+    // Aplique a mesma correção em todos os métodos existentes que usam $this->sessionToken.
+
+
+
 
 
 
@@ -258,7 +287,7 @@ public function getEntities($range = '0-100') {
     $response = $this->client->get('Entity', [
         'headers' => [
             'App-Token'     => env('GLPI_APP_TOKEN'),
-            'Session-Token' => $this->sessionToken,
+            'Session-Token' => $this->getSessionToken(), // ✅ CORRETO AQUI
         ],
         'query' => [
             'range' => $range
@@ -269,19 +298,21 @@ public function getEntities($range = '0-100') {
 }
 
 
+
 public function getUsers()
 {
     $url = 'User?range=0-100&criteria%5B0%5D%5Bfield%5D=8&criteria%5B0%5D%5Bsearchtype%5D=equals&criteria%5B0%5D%5Bvalue%5D=1';
 
     $response = $this->client->get($url, [
         'headers' => [
-            'App-Token'    => env('GLPI_APP_TOKEN'),
-            'Session-Token' => $this->sessionToken,
+            'App-Token' => env('GLPI_APP_TOKEN'),
+            'Session-Token' => $this->getSessionToken(), // ✅ CORRETO AQUI
         ],
     ]);
 
     return json_decode($response->getBody(), true);
 }
+
 
 
 public function associateUserToTicket($ticketId, $userId) {
@@ -309,16 +340,7 @@ public function associateUserToTicket($ticketId, $userId) {
 
 
 
-public function getCategories() {
-    $response = $this->client->get('ITILCategory', [
-        'headers' => [
-            'App-Token'    => env('GLPI_APP_TOKEN'),
-            'Session-Token' => $this->sessionToken,
-        ],
-    ]);
-
-    return json_decode($response->getBody(), true);
-}
+ 
 
 
 public function getSingleTicket($id)
@@ -345,6 +367,83 @@ public function getSingleTicket($id)
         return null;
     }
 }
+
+
+
+public function getEntitiesName($range = '0-100') {
+    $response = $this->client->get('Entity', [
+        'headers' => [
+            'App-Token'     => env('GLPI_APP_TOKEN'),
+            'Session-Token' => $this->sessionToken,
+        ],
+        'query' => [
+            'range' => $range
+        ]
+    ]);
+
+    $entities = json_decode($response->getBody(), true);
+
+    // Criar uma lista de entidades com ID e Nome
+    $entitiesList = [];
+    foreach ($entities as $entity) {
+        $entitiesList[] = [
+            'id'   => $entity['id'],
+            'name' => $entity['name']
+        ];
+    }
+
+    return $entitiesList;
+}
+
+public function getUsersName()
+{
+    $url = 'User?range=0-100&criteria%5B0%5D%5Bfield%5D=8&criteria%5B0%5D%5Bsearchtype%5D=equals&criteria%5B0%5D%5Bvalue%5D=1';
+
+    $response = $this->client->get($url, [
+        'headers' => [
+            'App-Token'    => env('GLPI_APP_TOKEN'),
+            'Session-Token' => $this->sessionToken,
+        ],
+    ]);
+
+    $users = json_decode($response->getBody(), true);
+
+    // Criar uma lista de usuários com ID e Nome
+    $usersList = [];
+    foreach ($users as $user) {
+        $usersList[] = [
+            'id'   => $user['id'],
+            'name' => $user['firstname']
+        ];
+    }
+
+    return $usersList;
+}
+
+
+public function getCategoriesName()
+{
+    $response = $this->client->get('ITILCategory', [
+        'headers' => [
+            'App-Token'    => env('GLPI_APP_TOKEN'),
+            'Session-Token' => $this->sessionToken,
+        ],
+    ]);
+
+    $categories = json_decode($response->getBody(), true);
+
+    // Criar uma lista de categorias com ID e Nome
+    $categoriesList = [];
+    foreach ($categories as $category) {
+        $categoriesList[] = [
+            'id'   => $category['id'],
+            'name' => $category['name']
+        ];
+    }
+
+    return $categoriesList;
+}
+
 
 
 }

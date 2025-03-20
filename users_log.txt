@@ -1,0 +1,1243 @@
+Total de usuários encontrados: 264
+Resultado 1:
+Username: dinastia
+Credit: 4000.0000
+Credit Notification: -1
+Plan ID: Discador com Secretaria
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 2:
+Username: gbdelima3
+Credit: 2441.4280
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 3:
+Username: gbdelima
+Credit: 1922.5459
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 4:
+Username: centertel
+Credit: 1557.8245
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 5:
+Username: conahelth
+Credit: 1486.3040
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 6:
+Username: luareal
+Credit: 1483.0560
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 7:
+Username: crdtelecom
+Credit: 1364.7110
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 8:
+Username: rodger_ura
+Credit: 1262.9117
+Credit Notification: -1
+Plan ID: 045 Rodger
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 9:
+Username: Rodger_discador
+Credit: 1083.7564
+Credit Notification: -1
+Plan ID: 045 Rodger
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 10:
+Username: pinksolucoes
+Credit: 987.8800
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 11:
+Username: fenix_servicos
+Credit: 839.9765
+Credit Notification: -1
+Plan ID: Ilimitado
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 12:
+Username: recuperagestao
+Credit: 832.3660
+Credit Notification: 200000
+Plan ID: Plano 0,070
+Email: augusto.queiroz@core.bsb.br
+Phone: 
+Notificação: 1
+-----------------------------
+Resultado 13:
+Username: pereiraestraliote
+Credit: 780.3810
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 14:
+Username: montseguros
+Credit: 732.1650
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 15:
+Username: gbdelima4
+Credit: 610.0360
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 16:
+Username: esteiras
+Credit: 609.4080
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 17:
+Username: gbdelima2
+Credit: 607.8350
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 18:
+Username: izabelapires
+Credit: 576.4140
+Credit Notification: -1
+Plan ID: Plano 0,10
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 19:
+Username: bpconstrutora
+Credit: 542.3600
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 21:
+Username: webtelecom
+Credit: 482.2710
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 22:
+Username: brprevi
+Credit: 441.3080
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 23:
+Username: abcensina
+Credit: 430.1370
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 24:
+Username: brasilcentral
+Credit: 377.5600
+Credit Notification: -1
+Plan ID: Plano 0,10
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 25:
+Username: stratton
+Credit: 347.7250
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 26:
+Username: adeinstalacao
+Credit: 345.5460
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 27:
+Username: bioestetic
+Credit: 329.0350
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 28:
+Username: inova
+Credit: 309.5890
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 29:
+Username: raddar
+Credit: 307.8130
+Credit Notification: -1
+Plan ID: Plano 0,11
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 30:
+Username: goback
+Credit: 285.0120
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 31:
+Username: alquimia
+Credit: 284.1120
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 32:
+Username: agsatinstalacao
+Credit: 276.3040
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 33:
+Username: Conexao_08002003576
+Credit: 249.7960
+Credit Notification: -1
+Plan ID: 0800
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 34:
+Username: infocell
+Credit: 242.1440
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 35:
+Username: neocerebro
+Credit: 214.8450
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 36:
+Username: fenixsat
+Credit: 210.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 37:
+Username: lacolchoes
+Credit: 198.5970
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 38:
+Username: fibratelecom
+Credit: 187.2400
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 39:
+Username: headconexoes
+Credit: 178.7030
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 40:
+Username: cvtelecom
+Credit: 170.7750
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 41:
+Username: anhangueraura
+Credit: 164.8640
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 42:
+Username: pesquisa_dking
+Credit: 160.4780
+Credit Notification: -1
+Plan ID: Discador com Secretaria
+Email: davi@dking.com.br
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 43:
+Username: desenrola
+Credit: 141.8000
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 44:
+Username: wsscarvalho
+Credit: 137.2910
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 45:
+Username: cotasinvestimento
+Credit: 136.3740
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 46:
+Username: uptelecom
+Credit: 124.2240
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 47:
+Username: superacomercio
+Credit: 114.9200
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 48:
+Username: mazurkievicz
+Credit: 114.3790
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 49:
+Username: cleberdjalma
+Credit: 110.1000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 50:
+Username: rowtel
+Credit: 105.4810
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 51:
+Username: lcconcile
+Credit: 100.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 52:
+Username: fortplan
+Credit: 100.0000
+Credit Notification: -1
+Plan ID: Plano 0,10
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 53:
+Username: hdtelecom
+Credit: 99.6680
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 54:
+Username: cvdoprado
+Credit: 98.1400
+Credit Notification: -1
+Plan ID: Plano 0,10
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 55:
+Username: uniaoservicos
+Credit: 98.1260
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 56:
+Username: qualisaty
+Credit: 91.8210
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 57:
+Username: brunofranco
+Credit: 90.0000
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 58:
+Username: gabiatti
+Credit: 70.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 59:
+Username: bluesaude
+Credit: 70.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 60:
+Username: globalnet
+Credit: 70.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 61:
+Username: Mundial
+Credit: 61.3271
+Credit Notification: -1
+Plan ID: Discador com Secretaria
+Email: francielleferreira.oi@hotmail.com
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 62:
+Username: metadir
+Credit: 60.6580
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 63:
+Username: natanapereira
+Credit: 50.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 64:
+Username: flowaceleradora
+Credit: 48.4080
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 65:
+Username: centraldeemp
+Credit: 47.4110
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 66:
+Username: equipominutado
+Credit: 45.7630
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 67:
+Username: marcocampos
+Credit: 45.7230
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 68:
+Username: yasmincaetano
+Credit: 45.7100
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 69:
+Username: agstelecom
+Credit: 44.2540
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 70:
+Username: oficialtelecom
+Credit: 33.8730
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 71:
+Username: mcrassessoria
+Credit: 24.0190
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 73:
+Username: upunipessoal
+Credit: 17.4420
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 75:
+Username: marcoantonio
+Credit: 16.0150
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 77:
+Username: rrsolutions
+Credit: 12.3480
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 80:
+Username: Rodger
+Credit: 9.8386
+Credit Notification: -1
+Plan ID: 045 Rodger
+Email: rodgermaster10@gmail.com
+Phone: 
+Notificação: 1
+-----------------------------
+Resultado 81:
+Username: kellyrodrigues
+Credit: 3.5020
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 82:
+Username: inova0303
+Credit: 2.7000
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 83:
+Username: slimtelecom
+Credit: 0.1080
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 85:
+Username: goandback_construcao
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 86:
+Username: root
+Credit: 0.0000
+Credit Notification: 10
+Plan ID: N/A
+Email: comercial@liguetalk.com.br
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 90:
+Username: kaua_ligue
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: N/A
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 94:
+Username: goandback_educacao
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 99:
+Username: futuretech
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,055
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 107:
+Username: wellington
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: N/A
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 109:
+Username: rodrigoalmeida
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 112:
+Username: Testerevenda
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: 0.06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 113:
+Username: Agecobrevenda
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: 0.06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 114:
+Username: pablosuporte
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: N/A
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 117:
+Username: lavirri
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 119:
+Username: realopenbank
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 126:
+Username: gustaavo_ligue
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: N/A
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 128:
+Username: dracma
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 137:
+Username: augusto_ligue
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: N/A
+Email: augusto.netoqueiroz@gmail.com
+Phone: 556181503910
+Notificação: 1
+-----------------------------
+Resultado 139:
+Username: pctalk
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Ilimitado
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 144:
+Username: mrcassessoria
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 146:
+Username: gustavo_ligue
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: N/A
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 175:
+Username: barbaraalmeida
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 180:
+Username: tycall
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 210:
+Username: goandback_modas
+Credit: 0.0000
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 213:
+Username: Maximiliano
+Credit: -0.0004
+Credit Notification: -1
+Plan ID: Plano 0,45
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 214:
+Username: cvauditoria
+Credit: -0.0040
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 215:
+Username: joserubens
+Credit: -0.0110
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 219:
+Username: jonatasservicos
+Credit: -0.0280
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 220:
+Username: crdminutado
+Credit: -0.0340
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 223:
+Username: rj6empresas
+Credit: -0.0770
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 224:
+Username: doxadiscador
+Credit: -0.0970
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 225:
+Username: alexdasilva
+Credit: -0.1050
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 228:
+Username: aguiacomercio
+Credit: -0.1280
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 229:
+Username: inovareconsult
+Credit: -0.1285
+Credit Notification: -1
+Plan ID: Plano 0,065 com fixo
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 230:
+Username: fenixrep
+Credit: -0.1380
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 231:
+Username: evolucaotel
+Credit: -0.1501
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 232:
+Username: kerigma
+Credit: -0.1520
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 234:
+Username: orionfinancas
+Credit: -0.1890
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 235:
+Username: solminutado
+Credit: -0.1980
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 237:
+Username: patriciaaraujo
+Credit: -0.2450
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 238:
+Username: oksolucoes
+Credit: -0.2455
+Credit Notification: -1
+Plan ID: Plano 0,065 com fixo
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 239:
+Username: anhanguerasky
+Credit: -0.2580
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 240:
+Username: jonnathaelias
+Credit: -0.3010
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 241:
+Username: maxxura
+Credit: -0.3330
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 242:
+Username: flconsult
+Credit: -0.3880
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 243:
+Username: gabrielcel
+Credit: -0.4280
+Credit Notification: -1
+Plan ID: Plano 0,08
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 244:
+Username: aguiasky
+Credit: -0.4310
+Credit Notification: -1
+Plan ID: Plano 0,055
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 245:
+Username: diogosoares
+Credit: -0.4500
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 247:
+Username: Eleitorweb
+Credit: -0.8340
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 248:
+Username: b4bsolucoes
+Credit: -0.9710
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 249:
+Username: pisca
+Credit: -1.3530
+Credit Notification: -1
+Plan ID: Plano 0,055
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 250:
+Username: yuri
+Credit: -3.1885
+Credit Notification: -1
+Plan ID: Plano 0,055
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 251:
+Username: businessteam
+Credit: -3.4590
+Credit Notification: -1
+Plan ID: Plano 0,070
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 252:
+Username: clikagenciamento
+Credit: -4.8020
+Credit Notification: -1
+Plan ID: Plano 0,050
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 253:
+Username: gerpmerca
+Credit: -20.6336
+Credit Notification: -1
+Plan ID: Plano 0,64
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 254:
+Username: Atendas
+Credit: -35.4940
+Credit Notification: 50
+Plan ID: Atendas
+Email: leo@atendas.com.br
+Phone: 
+Notificação: 1
+-----------------------------
+Resultado 255:
+Username: maxxitele
+Credit: -68.8092
+Credit Notification: -1
+Plan ID: Plano Maxxitele
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 257:
+Username: numemdata
+Credit: -139.9390
+Credit Notification: -1
+Plan ID: Plano 0,09
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 259:
+Username: agecobassessoria
+Credit: -7088.9040
+Credit Notification: -1
+Plan ID: 0.06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 260:
+Username: skyfibra
+Credit: N/A
+Credit Notification: -1
+Plan ID: 0,060
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 261:
+Username: Agecob_Sky
+Credit: N/A
+Credit Notification: -1
+Plan ID: Plano 0,06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 262:
+Username: Agecob_Vero
+Credit: N/A
+Credit Notification: -1
+Plan ID: Plano 0,06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 263:
+Username: Agecob_Tim
+Credit: N/A
+Credit Notification: -1
+Plan ID: Plano 0,06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------
+Resultado 264:
+Username: Agecob_Oi
+Credit: N/A
+Credit Notification: -1
+Plan ID: Plano 0,06
+Email: 
+Phone: 
+Notificação: 0
+-----------------------------

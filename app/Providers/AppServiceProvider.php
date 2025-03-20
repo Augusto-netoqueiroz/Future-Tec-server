@@ -2,13 +2,12 @@
 
 namespace App\Providers;
 
-
-
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Atividade;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\URL; // <-- Adicione isso
+use App\Models\Atividade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,22 +23,18 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot()
-{
-    // Compartilhar o usuário autenticado com todas as views
-    View::share('user', Auth::user());
-    
-    function registrarAtividade($acao, $descricao = null)
     {
-        if (Auth::check()) {
-            Atividade::create([
-                'user_id' => Auth::id(),
-                'acao' => $acao,
-                'descricao' => $descricao,
-                'ip' => Request::ip(),
-            ]);
+        // Forçar HTTPS em produção (adicione esse bloco aqui)
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
         }
+
+        // Compartilhar o usuário autenticado com todas as views
+        View::share('user', Auth::user());
+
+        // Registrar atividade como helper global
+      
+           
+        
     }
-
-
-}
 }

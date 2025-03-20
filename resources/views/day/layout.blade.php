@@ -243,7 +243,8 @@
 												@if (Auth::check())
 													<!-- Avatar -->
 													<div class="symbol symbol-50px me-5">
-														<img alt="{{ Auth::user()->name }}" src="{{ asset('storage/' . Auth::user()->avatar) }}" />
+													<img alt="{{ Auth::user()->name }}" src="{{ Storage::url('avatars/' . Auth::user()->avatar) }}" />
+
 													</div>
 													<!-- Username -->
 													<div class="d-flex flex-column">

@@ -9,6 +9,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
+
+use App\Models\DiscordMessage;
+ 
+
+
 
 use Illuminate\Support\Facades\Http; // Importação correta
 use Carbon\Carbon;
@@ -507,6 +513,318 @@ public function sendDailyTicketSummary()
         return response()->json(['error' => 'Erro ao processar tickets: ' . $e->getMessage()], 500);
     }
 }
+
+ 
+public function getDiscordMessages()
+{
+    $url = env('DISCORD_URL');
+    $token = env('DISCORD_TOKEN');
+
+    if (!$url || !$token) {
+        Log::error('Configuração da API do Discord ausente');
+        return response()->json(['error' => 'Configuração da API do Discord ausente'], 500);
+    }
+
+    Log::info('Iniciando busca de mensagens no Discord');
+
+    $response = Http::withHeaders([
+        'Authorization' => "Bot $token",
+    ])->get($url);
+
+    if ($response->failed()) {
+        Log::error('Falha ao buscar os dados do Discord', ['status' => $response->status()]);
+        return response()->json(['error' => 'Falha ao buscar os dados do Discord'], $response->status());
+    }
+
+    $messages = $response->json();
+    Log::info('Mensagens recebidas', ['count' => count($messages)]);
+
+    foreach ($messages as $message) {
+        if (!isset($message['content'])) {
+            continue;
+        }
+
+        $content = $message['content'];
+
+        // Mapeamento dos campos que queremos extrair
+        $fields = [
+            'EMPRESA' => 'empresa',
+            'PROTOCOLO' => 'protocolo',
+            'CLIENTE' => 'cliente',
+            'CPF' => 'cpf',
+            'QUEM LIGOU' => 'quem_ligou',
+            'DESCRIÇÃO' => 'descricao',
+            'CATEGORIA' => 'categoria',
+            'STATUS' => 'status',
+            'ATT' => 'att',
+            'TELEFONE' => 'telefone',
+            'ENDEREÇO' => 'endereco'
+        ];
+
+        $data = [];
+        
+        // Percorre linha por linha e extrai o conteúdo após o ":"
+        foreach (explode("\n", $content) as $line) {
+            foreach ($fields as $label => $key) {
+                if (str_starts_with($line, "$label:")) {
+                    $value = trim(str_replace("$label:", '', $line)); // Remove a chave e espaços extras
+                    $data[$key] = $value ?: null; // Se o valor for vazio, armazena como null
+                }
+            }
+        }
+
+        // Se o campo EMPRESA estiver vazio, ignorar a mensagem
+        if (empty($data['empresa'])) {
+            Log::warning('Mensagem ignorada - EMPRESA vazia', ['content' => $content]);
+            continue;
+        }
+
+        // Verifica duplicação antes de salvar, considerando a ausência do campo 'descricao'
+        $existingMessage = DiscordMessage::where('protocolo', $data['protocolo']);
+
+        if (!empty($data['descricao'])) {
+            $existingMessage = $existingMessage->where('descricao', $data['descricao']);
+        }
+
+        $existingMessage = $existingMessage->first();
+
+        if ($existingMessage) {
+            Log::warning('Mensagem duplicada ignorada', [
+                'protocolo' => $data['protocolo'],
+                'descricao' => $data['descricao'] ?? 'N/A',
+            ]);
+            continue;
+        }
+
+        // Criando novo registro
+        $msg = DiscordMessage::create($data);
+
+        Log::info('Mensagem salva no banco', ['id' => $msg->id]);
+    }
+
+    return response()->json(['message' => 'Mensagens processadas e armazenadas']);
+}
+
+
+public function listMessages()
+{
+    $messages = DiscordMessage::latest()->get();
+    return view('discord', compact('messages'));
+}
+
+
+/**
+ * Retorna apenas as mensagens pendentes (ticket=null) ou falhas (ticket='falha'),
+ * já convertidas em array pronto para iterar.
+ */
+public function getDiscordbanco()
+{
+    // Traz somente os registros onde ticket está nulo ou 'falha'
+    $messagesDB = DiscordMessage::whereNull('ticket')
+        ->orWhere('ticket', 'falha')
+        ->get();
+
+    // Mapeamos para o formato que o processAndCreateTickets espera
+    $messages = $messagesDB->map(function ($message) {
+        return [
+            'id'          => $message->id,
+            // O título agora será sempre sobrescrito no processAndCreateTickets,
+            // então aqui não importa muito, mas podemos continuar retornando algo
+            'title'       => $message->protocolo ?? 'Sem título',
+            'description' => [
+                'descricao'   => $message->descricao,
+                'quem_ligou'  => $message->quem_ligou,
+                'cpf'         => $message->cpf,
+                'cliente'     => $message->cliente,
+                'telefone'    => $message->telefone,
+                'endereco'    => $message->endereco,
+            ],
+            // Se 'att' for o nome do usuário, buscaremos por 'name' no getAllData
+            'user_id'     => $message->att,
+            'entities_id' => $message->empresa,
+            'category_id' => $message->categoria,
+            // Pode vir "SOLUCIONADO", "(SOLUCIONADO)", "PENDENTE", "(PENDENTE)"
+            'status'      => $message->status
+        ];
+    })->all(); // array puro
+
+    return $messages;
+}
+
+/**
+ * Cria tickets no GLPI usando os dados do Discord,
+ * e atualiza o campo 'ticket' na tabela para 'criado' ou 'falha'.
+ */
+public function processAndCreateTickets()
+{
+    Log::info('Iniciando processo completo de criação de tickets');
+
+    // $messages agora é um array
+    $messages = $this->getDiscordbanco();
+    $data = $this->getAllData(); // ['entities' => [...], 'users' => [...], 'categories' => [...]]
+
+    if (
+        !isset($data['entities'], $data['users'], $data['categories']) ||
+        !is_array($data['entities']) || !is_array($data['users']) || !is_array($data['categories'])
+    ) {
+        // Log local
+        $logMessage = 'Estrutura de dados inválida';
+        Log::error($logMessage, ['data' => $data]);
+
+        // Salva na tabela ticket_logs
+        DB::table('ticket_logs')->insert([
+            'message_id'  => null,
+            'log_message' => $logMessage,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        return response()->json(['error' => $logMessage], 500);
+    }
+
+    $logs = [];
+
+    foreach ($messages as $message) {
+        $messageId = $message['id']; // ID do registro no banco discord_messages
+
+        $user     = collect($data['users'])->firstWhere('name', $message['user_id']);
+        $entity   = collect($data['entities'])->firstWhere('name', $message['entities_id']);
+        $category = collect($data['categories'])->firstWhere('name', $message['category_id']);
+
+        // Verifica se algum deles está faltando
+        if (!$user || !$entity || !$category) {
+            // Monta lista do que está faltando
+            $faltando = [];
+            if (!$user) {
+                $faltando[] = 'Usuário';
+            }
+            if (!$entity) {
+                $faltando[] = 'Entidade';
+            }
+            if (!$category) {
+                $faltando[] = 'Categoria';
+            }
+
+            $faltandoStr = implode(', ', $faltando);
+            $logMessage = "Dados incompletos para criação do ticket (ID=$messageId). Faltando: $faltandoStr";
+            $logs[] = $logMessage;
+
+            // Salva log na tabela
+            DB::table('ticket_logs')->insert([
+                'message_id'  => $messageId,
+                'log_message' => $logMessage,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            Log::warning($logMessage, ['message' => $message]);
+
+            // Marca como 'falha'
+            DiscordMessage::where('id', $messageId)->update(['ticket' => 'falha']);
+            continue;
+        }
+
+        // Título fixo
+        $title       = "CRIADO AUTOMATICAMENTE - FT SERVER";
+        // Descrição em JSON
+        $description = json_encode($message['description'] ?? 'Sem descrição');
+
+        // IDs internos do GLPI
+        $userId     = $user['id'];
+        $entityId   = $entity['id'];
+        $categoryId = $category['id'];
+
+        // Mapeamento de status
+        $rawStatus = strtoupper(trim($message['status'] ?? '', " ()"));
+        if ($rawStatus === 'SOLUCIONADO') {
+            $statusGlpi = 5; // Solucionado
+        } elseif ($rawStatus === 'PENDENTE') {
+            $statusGlpi = 4; // Pendente
+        } else {
+            $statusGlpi = 1; // Novo (default)
+        }
+
+        try {
+            // Cria o ticket no GLPI
+            $response = $this->glpiService->createTicket(
+                $title,
+                $description,
+                $userId,
+                $entityId,
+                $categoryId,
+                $statusGlpi
+            );
+
+            if (!empty($response['id'])) {
+                // Associação de requerente
+                $this->glpiService->associateUserToTicket($response['id'], $userId);
+
+                $logMessage = "Ticket GLPI #{$response['id']} criado (ID=$messageId) e requerente associado.";
+                $logs[] = $logMessage;
+
+                // Salva na tabela ticket_logs
+                DB::table('ticket_logs')->insert([
+                    'message_id'  => $messageId,
+                    'log_message' => $logMessage,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+
+                // Marca como 'criado'
+                DiscordMessage::where('id', $messageId)->update(['ticket' => 'criado']);
+
+            } else {
+                $logMessage = "Falha ao criar ticket GLPI (sem ID retornado) (ID=$messageId)";
+                $logs[] = $logMessage;
+
+                DB::table('ticket_logs')->insert([
+                    'message_id'  => $messageId,
+                    'log_message' => $logMessage,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+
+                DiscordMessage::where('id', $messageId)->update(['ticket' => 'falha']);
+            }
+
+        } catch (\Exception $e) {
+            $logMessage = "Erro ao criar ticket: " . $e->getMessage() . " (ID=$messageId)";
+            $logs[] = $logMessage;
+
+            DB::table('ticket_logs')->insert([
+                'message_id'  => $messageId,
+                'log_message' => $logMessage,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            Log::error($logMessage, [
+                'error' => $e->getMessage(),
+                'messageId' => $messageId,
+                'payload' => compact('title','description','userId','entityId','categoryId','statusGlpi')
+            ]);
+
+            // Marca como 'falha'
+            DiscordMessage::where('id', $messageId)->update(['ticket' => 'falha']);
+        }
+    }
+
+    Log::info('Processo completo de criação de tickets finalizado');
+    return response()->json(['logs' => $logs]);
+}
+
+
+
+
+
+    public function getAllData()
+    {
+        return [
+            'entities'  => $this->glpiService->getEntitiesName(),
+            'users'     => $this->glpiService->getUsersName(),
+            'categories' => $this->glpiService->getCategoriesName(),
+        ];
+    }
 
     
     

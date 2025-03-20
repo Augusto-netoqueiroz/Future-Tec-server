@@ -22,64 +22,49 @@ use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\Liguetalkcontroller;
 use App\Http\Controllers\GlpiController;
 use \App\Http\Middleware\TesteMiddleware;
+use App\Http\Controllers\MagnusController;
 
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('home');
     }
-    return view('login'); // Renderiza a view do tema para usuários não autenticados
+    return view('login');
 })->name('root');
 
-// Rota home
 Route::get('/home', [HomeController::class, 'index'])->name('home');
-
-// Exibe a página de login
-
 Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
 
-
-
 // USER
-Route::get('/users', [UserController::class, 'index'])->name('users.index');
-Route::delete('/users/{id}/logout', [UserController::class, 'logoutUser'])->name('users.logoutUser');
+//Route::get('/users', [UserController::class, 'index'])->name('users.index');
+//Route::delete('/users/{id}/logout', [UserController::class, 'logoutUser'])->name('users.logoutUser');
 Route::resource('users', UserController::class);
 Route::post('users/{id}/logout', [UserController::class, 'logoutUser'])->name('users.logoutUser');
-Route::post('/users/{id}/logout', [UserController::class, 'logoutUser'])->name('users.logoutUser');
 
-
-// Permissões
 Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-
 Route::post('permissions', [PermissionController::class, 'update'])->name('permissions.update');
 
-// Processa o login
 Route::post('/login', [UserController::class, 'login'])->name('user.login');
-
-// Logout
 Route::post('/logout', [UserController::class, 'logout'])->name('logout');
 
-// Outras rotas públicas
 Route::get('/call-events', [CallEventController::class, 'index'])->name('call-events');
 Route::get('/consulta-estado', [RamalController::class, 'consultarEstado']);
 
 // Admin Routes
-Route::prefix('admin')->group(function () {
-    Route::get('users', [UserController::class, 'index'])->name('users.index');
-    Route::get('users/create', [UserController::class, 'create'])->name('users.create');
-    Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-    Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('user.edit');
-    Route::post('users', [UserController::class, 'store'])->name('users.store');
-    Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-});
+//Route::prefix('admin')->group(function () {
+    //Route::get('users', [UserController::class, 'index'])->name('users.index');
+    //Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+   // Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    //Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('user.edit');
+    //::post('users', [UserController::class, 'store'])->name('users.store');
+    //Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+    //Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+//});
 
-// Painel de atendimento
 Route::get('/painel-atendimento', [PainelAtendimentoController::class, 'index'])->name('painel-atendimento');
 Route::post('/associar-ramal', [PainelAtendimentoController::class, 'associar'])->name('associar-ramal');
 Route::post('/desassociar-ramal', [PainelAtendimentoController::class, 'desassociar'])->name('desassociar-ramal');
-Route::delete('/desassociar-ramal', [PainelAtendimentoController::class, 'desassociar'])->name('desassociar-ramal');
+//Route::delete('/desassociar-ramal', [PainelAtendimentoController::class, 'desassociar'])->name('desassociar-ramal');
 
-// Página de ramais telefonia
 Route::prefix('ramais')->name('ramais.')->group(function () {
     Route::get('/', [RamalController::class, 'index'])->name('index');
     Route::get('create', [RamalController::class, 'create'])->name('create');
@@ -89,18 +74,15 @@ Route::prefix('ramais')->name('ramais.')->group(function () {
     Route::delete('{ramal}', [RamalController::class, 'destroy'])->name('destroy');
 });
 
-// Relatórios
 Route::get('/relatorios/ligacoes', [RelatorioController::class, 'ligacoes'])->name('relatorios.ligacoes');
 Route::get('/relatorios/login', [ReportController::class, 'index'])->name('login-report.index');
 Route::get('/relatorios/atividade', [RelatorioController::class, 'index'])->name('relatorios.index');
 
-
-// Filas
 Route::prefix('filas')->name('filas.')->group(function () {
     Route::get('/', [FilaController::class, 'index'])->name('index');
     Route::get('create', [FilaController::class, 'create'])->name('create');
     Route::post('store', [FilaController::class, 'store'])->name('store');
-    Route::get('/filas/{id}/edit', [FilaController::class, 'edit'])->name('filas.edit');
+    Route::get('{id}/edit', [FilaController::class, 'edit'])->name('edit');
     Route::put('update/{id}', [FilaController::class, 'update'])->name('update');
     Route::delete('destroy/{id}', [FilaController::class, 'destroy'])->name('destroy');
     Route::get('{id}/gerenciar', [FilaController::class, 'manageMembers'])->name('manage');
@@ -108,14 +90,9 @@ Route::prefix('filas')->name('filas.')->group(function () {
     Route::delete('{queueId}/membros/{userId}', [FilaController::class, 'removeMember'])->name('removeMember');
     Route::post('{fila}/member/{member}/update', [FilaController::class, 'updateMemberState'])->name('updateMemberState');
 });
-Route::get('/filas/{id}/edit', [FilaController::class, 'edit'])->name('filas.edit');
 
+//Route::put('/filas/{id}', [FilaController::class, 'update'])->name('filas.update');
 
-
-// Rota para atualizar os dados da fila
-Route::put('/filas/{id}', [FilaController::class, 'update'])->name('filas.update');
-
-// Agentes
 Route::get('/agents', [AgentController::class, 'index'])->name('agents.index');
 Route::post('/agents', [AgentController::class, 'store'])->name('agents.store');
 Route::delete('/agents/{id}', [AgentController::class, 'destroy'])->name('agents.destroy');
@@ -123,7 +100,6 @@ Route::post('/agents/pause', [AgentController::class, 'pauseAgent'])->name('agen
 Route::get('/agents/test-pause', [AgentController::class, 'pauseTest'])->name('agents.test-pause');
 Route::post('/ami', [AgentController::class, 'pauseAgent']);
 
-// Rotas
 Route::resource('rotas', RotasController::class);
 
 // WppConnect
@@ -151,11 +127,11 @@ Route::prefix('troncos')->name('troncos.')->group(function () {
 //Pausas
 Route::resource('pauses', PauseController::class);
 Route::post('/users/toggle-pause', [UserController::class, 'togglePause'])->name('users.togglePause');
-Route::get('/pauses', [PauseController::class, 'index'])->name('pauses.index'); // Lista de pausas
-Route::post('/pauses', [PauseController::class, 'store'])->name('pauses.store'); // Salvar nova pausa
-Route::get('/pauses/{id}/edit', [PauseController::class, 'edit'])->name('pauses.edit'); // Formulário para editar pausa
-Route::put('/pauses/{id}', [PauseController::class, 'update'])->name('pauses.update'); // Atualizar pausa existente
-Route::delete('/pauses/{id}', [PauseController::class, 'destroy'])->name('pauses.destroy'); // Deletar pausa
+//Route::get('/pauses', [PauseController::class, 'index'])->name('pauses.index'); // Lista de pausas
+//Route::post('/pauses', [PauseController::class, 'store'])->name('pauses.store'); // Salvar nova pausa
+//Route::get('/pauses/{id}/edit', [PauseController::class, 'edit'])->name('pauses.edit'); // Formulário para editar pausa
+//Route::put('/pauses/{id}', [PauseController::class, 'update'])->name('pauses.update'); // Atualizar pausa existente
+//Route::delete('/pauses/{id}', [PauseController::class, 'destroy'])->name('pauses.destroy'); // Deletar pausa
 
 
 
@@ -185,10 +161,10 @@ Route::post('/finish', [PauseController::class, 'finish'])->name('finish');
     // Retorna a lista de pausas disponíveis
     
     Route::get('/Pausas', [PauseController::class, 'showpauses'])->name('Pausas.inicio');
-    Route::get('/Pausas/create', [PauseController::class, 'create'])->name('pauses.create'); // Formulário para criar pausa
-    Route::post('/Pausas/store', [PauseController::class, 'store'])->name('pauses.store'); // Salvar nova pausa
-    Route::get('/pauses/{id}/edit', [PauseController::class, 'edit'])->name('pauses.edit'); // Formulário para editar pausa
-    Route::put('/pauses/{id}', [PauseController::class, 'update'])->name('pauses.update'); // Atualizar pausa existente
+    //Route::get('/Pausas/create', [PauseController::class, 'create'])->name('pauses.create'); // Formulário para criar pausa
+    //Route::post('/Pausas/store', [PauseController::class, 'store'])->name('pauses.store'); // Salvar nova pausa
+    //Route::get('/pauses/{id}/edit', [PauseController::class, 'edit'])->name('pauses.edit'); // Formulário para editar pausa
+    //::put('/pauses/{id}', [PauseController::class, 'update'])->name('pauses.update'); // Atualizar pausa existente
 
     // Inicia uma pausa
     Route::post('/pauses/start', [PauseController::class, 'startPause']);
@@ -284,3 +260,17 @@ Route::get('/calls/user', [PainelAtendimentoController::class, 'getUserCalls']);
 Route::get('/generate-csrf-token', function() {
     return response()->json(['csrf_token' => csrf_token()]);
 });
+
+Route::get('/discord/messages', [GlpiController::class, 'getDiscordMessages']);
+Route::get('/messages', [GlpiController::class, 'listMessages']);
+
+
+Route::get('/magnus/saldo', [MagnusController::class, 'getBalance']);
+Route::get('/magnus/usuarios', [MagnusController::class, 'getUsers']);
+
+Route::get('/discord/banco', [GlpiController::class, 'getDiscordbanco']);
+
+
+Route::get('/alldata', [GlpiController::class, 'getAllData']);
+
+Route::get('/process-tickets', [GlpiController::class, 'processAndCreateTickets']);
