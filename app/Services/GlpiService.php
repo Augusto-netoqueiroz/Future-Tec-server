@@ -59,27 +59,36 @@ class GlpiService {
 
 
 
- public function createTicket($title, $description, $user_id, $entities_id, $category_id, $status) {
+    public function createTicket($title, $description, $user_id, $entities_id, $category_id, $status, $requesttypes_id = null)
+    {
+        $input = [
+            'name'               => $title,
+            'content'            => $description,
+            'users_id_recipient' => $user_id,
+            'entities_id'        => $entities_id,
+            'itilcategories_id'  => $category_id,
+            'status'             => $status
+        ];
+    
+        // Adiciona o campo de origem se estiver presente
+        if (!is_null($requesttypes_id)) {
+            $input['requesttypes_id'] = $requesttypes_id;
+        }
+    
         $response = $this->client->post('Ticket', [
             'headers' => [
-                'App-Token'    => env('GLPI_APP_TOKEN'),
+                'App-Token'     => env('GLPI_APP_TOKEN'),
                 'Session-Token' => $this->getSessionToken(),
                 'Content-Type'  => 'application/json'
             ],
             'json' => [
-                'input' => [
-                    'name'               => $title,
-                    'content'            => $description,
-                    'users_id_recipient' => $user_id,
-                    'entities_id'        => $entities_id,
-                    'itilcategories_id'  => $category_id,
-                    'status'             => $status
-                ]
+                'input' => $input
             ]
         ]);
-
+    
         return json_decode($response->getBody(), true);
     }
+    
 
     // Os demais métodos seguem a mesma lógica, trocando "$this->sessionToken" por "$this->getSessionToken()".
     // Exemplo simplificado:

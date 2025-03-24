@@ -177,7 +177,8 @@ class GlpiController extends Controller {
             'user_id'     => 'required|integer',
             'entities_id' => 'required|integer',
             'category_id' => 'required|integer',
-            'status'      => 'required|in:pendente,solucionado'
+            'status'      => 'required|in:pendente,solucionado',
+            'requesttypes_id' => 'required|integer'
         ]);
     
         try {
@@ -195,7 +196,8 @@ class GlpiController extends Controller {
                 $request->input('user_id'),
                 $request->input('entities_id'),
                 $request->input('category_id'),
-                $status
+                $status,
+                $request->input('requesttypes_id')
             );
     
             if (!$ticket || !isset($ticket['id'])) {

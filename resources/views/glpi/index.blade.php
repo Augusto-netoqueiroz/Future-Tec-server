@@ -67,6 +67,24 @@
                     </div>
                 </div>
 
+                {{-- Origem do Chamado --}}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Origem do Chamado:</label>
+                    <div class="d-flex gap-3">
+                        <input type="radio" class="btn-check" name="requesttypes_id" id="origem_telefone" value="9" required>
+                        <label class="btn btn-outline-primary fw-bold" for="origem_telefone">
+                            <i class="fas fa-phone"></i> Telefone
+                        </label>
+
+                        <input type="radio" class="btn-check" name="requesttypes_id" id="origem_chat" value="10">
+                        <label class="btn btn-outline-info fw-bold" for="origem_chat">
+                            <i class="fas fa-comments"></i> Chat
+                        </label>
+                    </div>
+                </div>
+
+
+
 
             {{-- Usuário --}}
             <div class="mb-3">
