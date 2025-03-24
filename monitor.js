@@ -1,7 +1,11 @@
+import fs from 'fs';
+import https from 'https';
 import { config } from "dotenv";
 import { Server } from "socket.io";
 import mysql from "mysql2";
 import AsteriskManager from 'asterisk-manager';
+ 
+
 
 // Carregar variáveis do .env
 config();
@@ -24,13 +28,27 @@ db.connect((err) => {
     console.log("Conectado ao banco de dados MySQL!");
 });
 
-// Criação do servidor Socket.io na porta 4000
-const io = new Server(4000, {
+// Carrega os certificados SSL
+const sslOptions = {
+    key: fs.readFileSync('/var/www/projetolaravel/certificados/fttelecom.cloud/key.pem'),  
+    cert: fs.readFileSync('/var/www/projetolaravel/certificados/fttelecom.cloud/fullchain.pem'),
+  };
+  
+  // Cria um servidor HTTPS
+  const httpsServer = https.createServer(sslOptions);
+  
+  // Instancia o Socket.io sobre o HTTPS
+  const io = new Server(httpsServer, {
     cors: {
-        origin: "http://93.127.212.237:8082",
-        methods: ["GET", "POST"],
+      origin: "https://fttelecom.cloud",
+      methods: ["GET", "POST"],
     },
-});
+  });
+  
+  // Inicia o servidor HTTPS na porta 4000
+  httpsServer.listen(4000, () => {
+    console.log("🔐 Servidor HTTPS com Socket.io rodando na porta 4000");
+  });
 
 console.log("Socket.io server is running on port 4000");
 

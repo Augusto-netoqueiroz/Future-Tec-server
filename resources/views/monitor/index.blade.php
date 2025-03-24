@@ -35,54 +35,70 @@
             </div>
         </div>
 
-        <!-- Toggle da Fila (alinhado à direita) -->
+        <!-- Toggle da Fila -->
         <div class="col-md-3 d-flex justify-content-end">
             <div>
-                <div class="d-flex justify-content-end mb-2">
-                    <div class="form-check form-switch" style="transform: scale(1.3);">
-                        <input class="form-check-input" type="checkbox" id="queue-toggle">
-                        <label class="form-check-label text-secondary fw-bold ms-2" for="queue-toggle">Mostrar Fila</label>
-                    </div>
+                <div class="form-check form-switch mb-2" style="transform: scale(1.2);">
+                    <input class="form-check-input" type="checkbox" id="queue-toggle">
+                    <label class="form-check-label ms-2" for="queue-toggle">Mostrar Fila</label>
                 </div>
                 <div id="queue-section" class="queue-section p-3 shadow-sm rounded d-none" 
-                     style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem; transition: max-height 0.5s ease-in-out;">
-                    <h3 class="text-secondary">Ligações em Fila</h3>
-                    <div id="queue-table" class="queue-table bg-white rounded p-2" style="max-height: 280px; overflow-y: auto;">
-                        <!-- Dados das filas serão carregados via JS -->
-                    </div>
+                    style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem;">
+                    <h5 class="text-secondary">Ligações em Fila</h5>
+                    <div id="queue-table" class="bg-white rounded p-2" style="max-height: 280px; overflow-y: auto;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Separador -->
     <hr class="my-4">
 
-    <!-- Container para os Cards Dinâmicos -->
-    <div class="row">
-        <div class="col-12">
-            <div id="dynamic-cards-container" class="p-3 bg-white shadow-sm rounded" style="min-height: 150px; transition: min-height 0.5s ease-in-out;">
+    <!-- Ramais e Fila lado a lado -->
+    <div class="row mt-4">
+
+    <!-- Ramais Ativos -->
+        <div class="col-md-8" id="ramais-coluna">
+            <div id="dynamic-cards-container" class="p-3 bg-white shadow-sm rounded" style="min-height: 150px;">
                 <h4 class="text-secondary">Ramais Ativos</h4>
-                <div class="row" id="sippers-cards">
-                    <!-- Os cards dinâmicos serão adicionados aqui via JavaScript -->
-                </div>
+                <div class="row" id="sippers-cards"></div>
             </div>
         </div>
     </div>
-</div>
+  <!-- Fila -->
+    <div class="col-md-4 d-none" id="queue-column">
+            <div id="queue-section" class="queue-section p-3 shadow-sm rounded" 
+                style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem; max-height: 600px; overflow-y: auto;">
+                <h5 class="text-secondary">Ligações em Fila</h5>
+                <div id="queue-table" class="bg-white rounded p-2"></div>
+            </div>
+        </div>
 
 <!-- Modais -->
 @foreach(['Recebidas', 'Atendidas', 'Perdidas'] as $tipo)
 <div class="modal fade" id="modal{{ $tipo }}" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Ligações {{ $tipo }}</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title text-dark">Ligações {{ $tipo }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
-                <table class="table">
-                    <thead>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <label for="qtd-registros-{{ $tipo }}">Mostrar:</label>
+                        <select class="form-select d-inline-block w-auto qtd-registros" data-tipo="{{ $tipo }}">
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select> registros
+                    </div>
+                    <div class="spinner-border spinner-border-sm text-primary d-none" role="status" id="spinner{{ $tipo }}">
+                        <span class="sr-only">Carregando...</span>
+                    </div>
+                </div>
+
+                <table class="table table-bordered table-sm">
+                    <thead class="thead-light">
                         <tr>
                             <th>Data/Hora</th>
                             <th>Origem</th>
@@ -92,7 +108,7 @@
                         </tr>
                     </thead>
                     <tbody id="extrato{{ $tipo }}">
-                        <tr><td colspan="4">Carregando...</td></tr>
+                        <tr><td colspan="5">Carregando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -101,41 +117,18 @@
 </div>
 @endforeach
 
-<script>
-    document.getElementById('queue-toggle').addEventListener('change', function() {
-        let queueSection = document.getElementById('queue-section');
-        let dynamicCardsContainer = document.getElementById('dynamic-cards-container');
-
-        if (this.checked) {
-            queueSection.classList.remove('d-none');
-            dynamicCardsContainer.style.minHeight = "100px"; // Reduz altura
-        } else {
-            queueSection.classList.add('d-none');
-            dynamicCardsContainer.style.minHeight = "150px"; // Retorna ao padrão
-        }
-    });
-</script>
-
-
-
+{{-- Scripts externos --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    const empresaId = {{ Auth::user()->empresa_id }};
-</script>
+const empresaId = {{ Auth::user()->empresa_id }};
+const socket = io("https://fttelecom.cloud:4000");
 
-<script>
-   const socket = io("http://93.127.212.237:4000");
-
+// Dados socket.io
 socket.on('fetch-unified-data-response', (data) => {
-    console.log("Recebido evento fetch-unified-data-response:", data);
-
-    // Filtra os ramais para exibir apenas os da empresa do usuário
     const sippeersFiltrados = data.sippeers.filter(sipper => sipper.empresa_id == empresaId);
-
     atualizarRamais(sippeersFiltrados);
     atualizarFilas(data.queueData);
 });
@@ -144,14 +137,10 @@ function atualizarRamais(sippeers) {
     const cardsContainer = document.querySelector("#sippers-cards");
     cardsContainer.innerHTML = "";
 
-    // Criar um mapa de chamadas ativas baseado no uniqueID
     const chamadasAtivas = {};
-
     sippeers.forEach((sipper) => {
         if (sipper.uniqueID) {
-            if (!chamadasAtivas[sipper.uniqueID]) {
-                chamadasAtivas[sipper.uniqueID] = [];
-            }
+            if (!chamadasAtivas[sipper.uniqueID]) chamadasAtivas[sipper.uniqueID] = [];
             chamadasAtivas[sipper.uniqueID].push(sipper);
         }
     });
@@ -164,17 +153,13 @@ function atualizarRamais(sippeers) {
         let callingFrom = sipper.calling_from || sipper.name;
         let callingTo = sipper.calling_to || "";
 
-        // Se calling_to for null, tentamos ajustar com o outro ramal ativo
         if (!callingTo && chamadasAtivas[sipper.uniqueID]?.length > 1) {
             const outraParte = chamadasAtivas[sipper.uniqueID].find(c => c.name !== sipper.name);
-            if (outraParte) {
-                callingTo = outraParte.name;
-            }
+            if (outraParte) callingTo = outraParte.name;
         }
 
-        let badgeHTML = sipper.user_name && sipper.user_name !== "Desconhecido" 
-          ? `<span class="badge">${sipper.user_name}</span>` 
-          : "";
+        const badgeHTML = sipper.user_name && sipper.user_name !== "Desconhecido"
+            ? `<span class="badge">${sipper.user_name}</span>` : "";
 
         card.innerHTML = `
             <div class="card">
@@ -190,56 +175,54 @@ function atualizarRamais(sippeers) {
                 </div>
             </div>
         `;
-
         cardsContainer.appendChild(card);
         atualizarEstadoDoCard(sipper.name, sipper.call_state, callingFrom, callingTo);
     });
 }
 
+function atualizarEstadoDoCard(extension, callState, calling_from, calling_to) {
+    const card = document.querySelector(`#card-${extension} .card`);
+    const statusEl = card.querySelector(".status");
+    const infoEl = card.querySelector(".call-info");
 
-
-   function atualizarEstadoDoCard(extension, callState, calling_from, calling_to) {
-    const cardContainer = document.querySelector(`#card-${extension}`);
-    if (!cardContainer) return;
-
-    const card = cardContainer.querySelector(".card");
-    const statusElement = card.querySelector(".status");
-    const callInfoElement = card.querySelector(".call-info");
-    let iconElement = card.querySelector(".icon");
-
-    // Se o elemento de ícone não existir, cria um novo dentro do card
-    if (!iconElement) {
-        iconElement = document.createElement("span");
-        iconElement.classList.add("icon");
-        card.prepend(iconElement); // Adiciona no topo do card
+    let iconEl = card.querySelector(".icon");
+    if (!iconEl) {
+        iconEl = document.createElement("span");
+        iconEl.classList.add("icon");
+        card.prepend(iconEl);
     }
 
     card.classList.remove("call", "ringing", "ring", "shake");
 
-    if (callState === "Em Chamada") {
-        statusElement.textContent = "Em Chamada";
-        callInfoElement.textContent = `${calling_from} => ${calling_to}`;
-        card.classList.add("call");
-        iconElement.textContent = "🔴";
-    } else if (callState === "Tocando") {
-        statusElement.textContent = "Tocando";
-        callInfoElement.textContent = `${calling_to} => ${calling_from}`;
-        card.classList.add("ringing", "shake");
-        iconElement.textContent = "📳";
-    } else if (callState === "Chamada em Andamento") {
-        statusElement.textContent = "Conectando...";
-        callInfoElement.textContent = `${calling_from} => ${calling_to}`;
-        card.classList.add("ring");
-        iconElement.textContent = "🔄";
-    } else if (callState === "Discando") {
-        statusElement.textContent = "Discando";
-        callInfoElement.textContent = `${calling_from} => ${calling_to}`;
-        card.classList.add("ring");
-        iconElement.textContent = "📞";
-    } else {
-        statusElement.textContent = "Disponível";
-        callInfoElement.textContent = "";
-        iconElement.textContent = "✅";
+    switch (callState) {
+        case "Em Chamada":
+            statusEl.textContent = "Em Chamada";
+            infoEl.textContent = `${calling_from} => ${calling_to}`;
+            card.classList.add("call");
+            iconEl.textContent = "🔴";
+            break;
+        case "Tocando":
+            statusEl.textContent = "Tocando";
+            infoEl.textContent = `${calling_to} => ${calling_from}`;
+            card.classList.add("ringing", "shake");
+            iconEl.textContent = "📳";
+            break;
+        case "Chamada em Andamento":
+            statusEl.textContent = "Conectando...";
+            infoEl.textContent = `${calling_from} => ${calling_to}`;
+            card.classList.add("ring");
+            iconEl.textContent = "🔄";
+            break;
+        case "Discando":
+            statusEl.textContent = "Discando";
+            infoEl.textContent = `${calling_from} => ${calling_to}`;
+            card.classList.add("ring");
+            iconEl.textContent = "📞";
+            break;
+        default:
+            statusEl.textContent = "Disponível";
+            infoEl.textContent = "";
+            iconEl.textContent = "✅";
     }
 }
 
@@ -247,114 +230,124 @@ function atualizarFilas(queueData) {
     const queueTable = document.querySelector("#queue-table");
     queueTable.innerHTML = "";
 
-    // Filtra as filas que pertencem à empresa do usuário
-    const filasFiltradas = queueData.filter(queue => queue.empresa_id == empresaId);
-
-    if (filasFiltradas.length === 0) {
+    const filas = queueData.filter(queue => queue.empresa_id == empresaId);
+    if (!filas.length) {
         queueTable.innerHTML = "<p class='text-muted'>Nenhuma chamada na fila para sua empresa.</p>";
         return;
     }
 
-    filasFiltradas.forEach((queue) => {
-        // Cria o nome da fila
-        const queueNameElement = document.createElement("h3");
-        queueNameElement.textContent = queue.queueName;
-        queueTable.appendChild(queueNameElement);
+    filas.forEach((queue) => {
+        const queueName = document.createElement("h5");
+        queueName.textContent = queue.queueName;
+        queueTable.appendChild(queueName);
 
-        // Verifica se há callers na fila
-        if (queue.callers.length > 0) {
+        if (queue.callers.length) {
             queue.callers.forEach((caller) => {
-                // Cria um elemento de caller com as informações necessárias
-                const callerInfo = document.createElement("div");
-                callerInfo.classList.add("caller-info");
-                callerInfo.innerHTML = `
+                const div = document.createElement("div");
+                div.classList.add("caller-info");
+                div.innerHTML = `
                     <p><strong>Prioridade:</strong> ${caller.priority}</p>
                     <p><strong>Caller:</strong> ${caller.caller}</p>
                     <p><strong>Tempo de Espera:</strong> ${caller.waitTime}</p>
                 `;
-                queueTable.appendChild(callerInfo);
+                queueTable.appendChild(div);
             });
         } else {
-            // Se não houver callers na fila
-            const noCallersMessage = document.createElement("p");
-            noCallersMessage.classList.add("text-muted");
-            noCallersMessage.textContent = "Sem callers na fila.";
-            queueTable.appendChild(noCallersMessage);
+            queueTable.innerHTML += "<p class='text-muted'>Sem callers na fila.</p>";
         }
     });
 }
 
+// Toggle fila
+document.getElementById('queue-toggle').addEventListener('change', function () {
+    const filaColuna = document.getElementById('queue-column');
 
-// Exemplo de como ativar/desativar a exibição da seção de filas com o toggle
-document.querySelector("#queue-toggle").addEventListener("change", (event) => {
-    document.querySelector("#queue-section").style.display = event.target.checked ? "block" : "none";
+    if (this.checked) {
+        filaColuna.classList.remove('d-none');
+    } else {
+        filaColuna.classList.add('d-none');
+    }
 });
-
-
-
-
 </script>
+
+{{-- Extrato de chamadas com spinner e select --}}
 <script>
-      $(document).ready(function() {
-    $('.fixed-card').click(function() {
-        let modalId = $(this).attr('data-target') || $(this).attr('data-bs-target'); // Pega o ID correto
-        let tipo = modalId.replace('#modal', ''); // Remove o prefixo "modal"
+$(document).ready(function () {
+    function carregarChamadas(tipo, qtd = 10) {
+        const tbody = $('#extrato' + tipo);
+        const spinner = $('#spinner' + tipo);
+        tbody.html('');
+        spinner.removeClass('d-none');
 
         $.ajax({
-            url: '/extrato-chamadas/' + tipo.toLowerCase(),
+            url: `/extrato-chamadas/${tipo.toLowerCase()}?limit=${qtd}`,
             method: 'GET',
-            success: function(data) {
-                let tbody = $('#extrato' + tipo);
-                tbody.empty();
+            success: function (data) {
                 if (data.length > 0) {
                     data.forEach(chamada => {
-                        tbody.append(`<tr>
-                            <td>${chamada.datetime}</td>
-                            <td>${chamada.origem}</td>
-                            <td>${chamada.destino}</td>
-                            <td>${chamada.fila}</td>
-                            <td>${chamada.duracao}</td>
-                        </tr>`);
+                        const dataHora = new Date(chamada.datetime).toLocaleString('pt-BR');
+                        tbody.append(`
+                            <tr>
+                                <td>${dataHora}</td>
+                                <td>${chamada.origem}</td>
+                                <td>${chamada.destino}</td>
+                                <td>${chamada.fila}</td>
+                                <td>${chamada.duracao} seg</td>
+                            </tr>
+                        `);
                     });
                 } else {
-                    tbody.append(`<tr><td colspan="4">Nenhuma chamada encontrada.</td></tr>`);
+                    tbody.append(`<tr><td colspan="5" class="text-center">Nenhuma chamada encontrada hoje.</td></tr>`);
                 }
-
-                // Agora abre o modal
-                var modal = new bootstrap.Modal(document.getElementById('modal' + tipo));
-                modal.show();
             },
-            error: function() {
-                alert('Erro ao carregar os dados.');
+            error: function () {
+                tbody.append(`<tr><td colspan="5" class="text-danger text-center">Erro ao carregar os dados.</td></tr>`);
+            },
+            complete: function () {
+                spinner.addClass('d-none');
             }
         });
+    }
+
+    $('.fixed-card').click(function () {
+        const modalId = $(this).data('target') || $(this).data('bs-target');
+        const tipo = modalId.replace('#modal', '');
+        const qtd = $(`.qtd-registros[data-tipo="${tipo}"]`).val() || 10;
+
+        carregarChamadas(tipo, qtd);
+
+        const modal = new bootstrap.Modal(document.getElementById('modal' + tipo));
+        modal.show();
+    });
+
+    $('.qtd-registros').on('change', function () {
+        const tipo = $(this).data('tipo');
+        const qtd = $(this).val();
+        carregarChamadas(tipo, qtd);
     });
 });
- 
-    </script>
-
-
+</script>
 
 <style>
 .card {
     background-color: #1ea965;
     color: white;
     border-radius: 10px;
-    padding: 3px; /* Reduzindo ainda mais o espaçamento interno */
+    padding: 3px;
     text-align: center;
     box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.15);
-    font-size: 0.75rem; /* Diminuindo a fonte */
-    min-width: 250px; /* Reduzindo a largura mínima */
-    max-width: 250px; /* Diminuindo a largura máxima */
+    font-size: 0.75rem;
+    min-width: 250px;
+    max-width: 250px;
     position: relative;
 }
 
 .card-body {
-    padding: 5px; /* Reduzindo o espaçamento interno */
+    padding: 5px;
 }
 
 .card-title {
-    font-size: 1rem; /* Diminuindo o título */
+    font-size: 1rem;
 }
 
 .card .status {
@@ -362,9 +355,8 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 }
 
 .call-info {
-    font-size: 0.75rem; /* Reduzindo informações da chamada */
+    font-size: 0.75rem;
 }
-
 
 .badge {
     position: absolute;
@@ -393,19 +385,19 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
 }
 
 .call {
-            background-color: #dc3545;
-            color: white;
-            animation: blink 1s infinite alternate;
-        }
+    background-color: #dc3545;
+    color: white;
+    animation: blink 1s infinite alternate;
+}
 
 .ring {
     background-color: #007bff !important;
 }
 
 @keyframes blink {
-            from { opacity: 1; }
-            to { opacity: 0.9; }
-        }
+    from { opacity: 1; }
+    to { opacity: 0.9; }
+}
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -419,5 +411,4 @@ document.querySelector("#queue-toggle").addEventListener("change", (event) => {
     animation: shake 0.4s infinite;
 }
 </style>
-
 @endsection
