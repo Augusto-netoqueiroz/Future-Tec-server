@@ -14,17 +14,22 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Verifica se o usuário está autenticado
+        if (!auth()->check()) {
+            return redirect()->route('login'); // ou return view('auth.login') se quiser exibir diretamente
+        }
+    
         $user = auth()->user();
         $empresaId = $user->empresa_id;
-
+    
         $userId = $request->input('user_id');
         $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
-
+    
         $users = User::where('empresa_id', $empresaId)->select('id', 'name')->get();
         $ramais = Sippeer::where('modo', 'ramal')->where('empresa_id', $empresaId)->select('id', 'name')->get();
         $filas = Queue::where('empresa_id', $empresaId)->select('id', 'name')->get();
-
+    
         $vinculos = AgenteRamalVinculo::whereHas('user', function ($query) use ($empresaId) {
                 $query->where('empresa_id', $empresaId);
             })
@@ -32,12 +37,13 @@ class DashboardController extends Controller
                 $query->where('agente_id', $userId);
             })
             ->get();
-
+    
         $resumo = $this->calcularResumo($vinculos, $startDate, $endDate);
         $resumoFilas = $this->calcularResumoFilas($empresaId, $startDate, $endDate);
-
+    
         return view('dashboard.index', compact('users', 'ramais', 'filas', 'vinculos', 'resumo', 'resumoFilas'));
     }
+    
 
     private function calcularResumo($vinculos, $startDate, $endDate)
     {

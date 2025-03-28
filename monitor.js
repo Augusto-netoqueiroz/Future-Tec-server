@@ -177,7 +177,7 @@ function getCallState(line) {
     return "Disponível";
 }
 
-// Função para buscar e emitir dados dos canais ativos
+ // Função para buscar e emitir dados dos canais ativos
 function fetchAndEmitRawChannels(enrichedSippeers) {
     ami.action(
         {
@@ -195,63 +195,74 @@ function fetchAndEmitRawChannels(enrichedSippeers) {
                 return;
             }
 
-            const activeChannels = res.output
-            .filter(line => line.startsWith("SIP/"))
-            .map(line => {
-                const modifiedLine = line.replace("Outgoing Line", "_Outgoing_Line");
-        
-                const regex = /^(\S+)\s+(\S*)\s+(\S*)\s+(\d+)\s+(\S+)\s+(\S+)\s+(.{1,30}?)\s{2,}(\S*)\s{2,}(\S*)\s{2,}(\S*)$/;
-                const match = modifiedLine.match(regex);
-        
-                if (!match) {
-                    console.warn("Falha ao processar linha:", modifiedLine);
-                    return null;
-                }
-        
-                const [
-                    _,   // match[0] é a linha completa, descartamos
-                    channel, context, extension, priority, state, application, data, callerID, duration, uniqueID
-                ] = match;
-        
-                return {
-                    channel,
-                    context: context || null,
-                    extension: extension || null,
-                    priority,
-                    state: getCallState(line),
-                    application,
-                    data: data.trim().replace("_Outgoing_Line", "Outgoing Line"),
-                    callerID: callerID || null,
-                    duration: duration || null,
-                    uniqueID: uniqueID || null
-                };
-            }).filter(Boolean);
+            const channelPromises = res.output
+                .filter(line => line.startsWith("SIP/"))
+                .map(line => {
+                    const modifiedLine = line.replace("Outgoing Line", "_Outgoing_Line");
+                    const regex = /^(\S+)\s+(\S*)\s+(\S*)\s+(\d+)\s+(\S+)\s+(\S+)\s+(.{1,30}?)\s{2,}(\S*)\s{2,}(\S*)\s{2,}(\S*)$/;
+                    const match = modifiedLine.match(regex);
 
-            const finalData = enrichedSippeers.map(sipper => {
-                const ramal = sipper.name.replace("SIP/", ""); // Remove "SIP/" se existir
-                const queueName = queueMapping[ramal]?.queueName || null;
-                
-                // 🔹 Busca o canal ativo correspondente ao ramal
-                const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
-            
-                return {
-                    ...sipper,
-                    call_state: activeChannel ? activeChannel.state : "Disponível",
-                    call_duration: activeChannel ? activeChannel.duration : null,
-                    calling_from: activeChannel ? sipper.name : null,
-                    calling_to: activeChannel ? activeChannel.extension : null,
-                    uniqueID: activeChannel ? activeChannel.uniqueID : null,
-                    queueName: queueName,  // 🔹 Adiciona a fila associada ao ramal, se existir
-                    channel: activeChannel ? activeChannel.channel : null // ✅ Adicionando o channel
-                };
+                    if (!match) {
+                        console.warn("Falha ao processar linha:", modifiedLine);
+                        return null;
+                    }
+
+                    const [
+                        _, channel, context, extension, priority,
+                        state, application, data, callerID, duration, uniqueID
+                    ] = match;
+
+                    return new Promise(resolve => {
+                        ami.action({
+                            action: 'GetVar',
+                            channel: channel,
+                            variable: 'PROTOCOLO'
+                        }, (err, result) => {
+                            resolve({
+                                channel,
+                                context: context || null,
+                                extension: extension || null,
+                                priority,
+                                state: getCallState(line),
+                                application,
+                                data: data.trim().replace("_Outgoing_Line", "Outgoing Line"),
+                                callerID: callerID || null,
+                                duration: duration || null,
+                                uniqueID: uniqueID || null,
+                                protocolo: result?.value || null
+                            });
+                        });
+                    });
+                })
+                .filter(Boolean);
+
+            Promise.all(channelPromises).then(activeChannels => {
+                const finalData = enrichedSippeers.map(sipper => {
+                    const ramal = sipper.name.replace("SIP/", ""); // Remove "SIP/" se existir
+                    const queueName = queueMapping[ramal]?.queueName || null;
+                    
+                    const activeChannel = activeChannels.find(ch => ch.channel.includes(sipper.name));
+
+                    return {
+                        ...sipper,
+                        call_state: activeChannel ? activeChannel.state : "Disponível",
+                        call_duration: activeChannel ? activeChannel.duration : null,
+                        calling_from: activeChannel ? sipper.name : null,
+                        calling_to: activeChannel ? activeChannel.extension : null,
+                        uniqueID: activeChannel ? activeChannel.uniqueID : null,
+                        queueName,
+                        channel: activeChannel ? activeChannel.channel : null,
+                        protocolo: activeChannel ? activeChannel.protocolo : null
+                    };
+                });
+
+                fetchQueueData(finalData);
+                fetchAndEmitQueueWithChannels(finalData);
             });
-
-
-            fetchQueueData(finalData);
-            fetchAndEmitQueueWithChannels(finalData);
         }
     );
 }
+
 
 // Função para buscar dados das filas
 function fetchQueueData(finalData) {

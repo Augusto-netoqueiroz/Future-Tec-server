@@ -38,7 +38,7 @@ class MonitorController extends Controller
     Log::info('Usuário autenticado. Empresa ID: ' . $user->empresa_id);
 
     // Verifica se o empresa_id está na lista de IDs permitidos
-    $allowedCompanies = [1, 2, 3];  
+    $allowedCompanies = [1, 2, 3, 9];  
     if (!in_array($user->empresa_id, $allowedCompanies)) {
         abort(403, 'Acesso não autorizado');
     }

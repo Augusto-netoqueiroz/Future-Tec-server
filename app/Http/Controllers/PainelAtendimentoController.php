@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Call;
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -138,29 +139,100 @@ class PainelAtendimentoController extends Controller
 }
 
 
+ 
 
 public function storeCall(Request $request)
-    {
-        
-        $call = Call::create([
-            'user_name' => $request->user_name,
-            'ramal' => $request->ramal,
-            'calling_to' => $request->calling_to,
-            'queue_name' => $request->queue_name ?? 'Sem fila',
-            'call_duration' => $request->call_duration ?? '00:00',
-            'channel' => $request->channel,
-        ]);
+{
+    Log::info('📥 Recebendo chamada para salvar:', $request->all());
 
-        return response()->json(['message' => 'Ligação salva com sucesso!', 'call' => $call]);
+    // Buscar o protocolo (uniqueid)
+    $protocolo = DB::table('cdr')
+        ->where('channel', 'like', '%' . $request->channel . '%')
+        ->orderByDesc('calldate')
+        ->value('uniqueid');
+
+    // Evitar salvar duplicado
+    $existe = Call::where('user_name', $request->user_name)
+        ->where('ramal', $request->ramal)
+        ->where('calling_to', $request->calling_to)
+        ->where('channel', $request->channel)
+        ->where('protocolo', $protocolo)
+        ->whereDate('created_at', now()->toDateString())
+        ->exists();
+
+    if ($existe) {
+        Log::info('🔁 Chamada já registrada. Ignorando.');
+        return response()->json(['message' => 'Chamada já registrada.']);
     }
+
+    $call = Call::create([
+        'user_name' => $request->user_name,
+        'ramal' => $request->ramal,
+        'calling_to' => $request->calling_to,
+        'queue_name' => $request->queue_name ?? 'Sem fila',
+        'call_duration' => $request->call_duration ?? '00:00',
+        'channel' => $request->channel,
+        'protocolo' => $protocolo
+    ]);
+
+    Log::info('✅ Chamada salva com sucesso.', ['id' => $call->id]);
+
+    return response()->json(['message' => 'Ligação salva com sucesso!', 'call' => $call]);
+}
+
 
     public function getUserCalls()
     {
         $userName = auth()->user()->name;
-        $calls = Call::where('user_name', $userName)->orderByDesc('created_at')->get();
-        
-        return response()->json($calls);
+    
+        $calls = Call::where('user_name', $userName)
+            ->orderByDesc('created_at')
+            ->get();
+    
+        // Adiciona o protocolo (uniqueid) manualmente para cada chamada
+        $callsComProtocolo = $calls->map(function ($call) {
+            $protocolo = DB::table('cdr')
+                ->where('channel', 'like', '%' . $call->channel . '%')
+                ->orderByDesc('calldate')
+                ->value('uniqueid');
+    
+            $call->protocolo = $protocolo ?? null;
+            return $call;
+        });
+    
+        return response()->json($callsComProtocolo);
     }
+    
 
+
+
+     
+
+   
+
+    public function buscarProtocolo(Request $request)
+    {
+        $channel = $request->input('channel');
+        Log::info("🔍 Buscando protocolo para canal: " . $channel);
+    
+        if (!$channel) {
+            Log::warning("❌ Canal não informado");
+            return response()->json(['error' => 'Canal não informado'], 400);
+        }
+    
+        $protocolo = DB::table('cdr')
+            ->where('channel', 'like', "%$channel%")
+            ->orderByDesc('calldate')
+            ->value('uniqueid');
+    
+        if (!$protocolo) {
+            Log::warning("⚠️ Protocolo não encontrado para canal: " . $channel);
+            return response()->json(['error' => 'Protocolo não encontrado'], 404);
+        }
+    
+        Log::info("✅ Protocolo encontrado: " . $protocolo);
+        return response()->json(['protocolo' => $protocolo]);
+    }
+    
 
 }

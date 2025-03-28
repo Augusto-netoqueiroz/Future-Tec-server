@@ -53,25 +53,26 @@
 
     <hr class="my-4">
 
-    <!-- Ramais e Fila lado a lado -->
-    <div class="row mt-4">
-
-    <!-- Ramais Ativos -->
-        <div class="col-md-8" id="ramais-coluna">
-            <div id="dynamic-cards-container" class="p-3 bg-white shadow-sm rounded" style="min-height: 150px;">
-                <h4 class="text-secondary">Ramais Ativos</h4>
-                <div class="row" id="sippers-cards"></div>
-            </div>
+  <!-- Ramais e Fila lado a lado (Fila à direita) -->
+<div class="row mt-4">
+    <!-- Ramais Ativos à esquerda -->
+    <div class="col-md-8" id="ramais-coluna">
+        <div id="dynamic-cards-container" class="p-3 bg-white shadow-sm rounded" style="min-height: 150px;">
+            <h4 class="text-secondary">Ramais Ativos</h4>
+            <div class="row" id="sippers-cards"></div>
         </div>
     </div>
-  <!-- Fila -->
+
+    <!-- Fila à direita -->
     <div class="col-md-4 d-none" id="queue-column">
-            <div id="queue-section" class="queue-section p-3 shadow-sm rounded" 
-                style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem; max-height: 600px; overflow-y: auto;">
-                <h5 class="text-secondary">Ligações em Fila</h5>
-                <div id="queue-table" class="bg-white rounded p-2"></div>
-            </div>
+        <div id="queue-section" class="queue-section p-3 shadow-sm rounded" 
+            style="background: linear-gradient(to right, #f8f9fa, #eaecef); border: 1px solid #ddd; font-size: 0.9rem; max-height: 600px; overflow-y: auto;">
+            <h5 class="text-secondary">Ligações em Fila</h5>
+            <div id="queue-table" class="bg-white rounded p-2"></div>
         </div>
+    </div>
+</div>
+
 
 <!-- Modais -->
 @foreach(['Recebidas', 'Atendidas', 'Perdidas'] as $tipo)
@@ -261,13 +262,9 @@ function atualizarFilas(queueData) {
 // Toggle fila
 document.getElementById('queue-toggle').addEventListener('change', function () {
     const filaColuna = document.getElementById('queue-column');
-
-    if (this.checked) {
-        filaColuna.classList.remove('d-none');
-    } else {
-        filaColuna.classList.add('d-none');
-    }
+    filaColuna.classList.toggle('d-none', !this.checked);
 });
+
 </script>
 
 {{-- Extrato de chamadas com spinner e select --}}

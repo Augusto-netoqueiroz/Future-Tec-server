@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container mt-4">
-
     <h1 class="mb-4">Relatório de Ligações</h1>
 
     <form id="filterForm" class="mb-4">
@@ -24,7 +23,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-2 mb-3 d-flex">
+            <div class="col-md-3 mb-3 d-flex">
                 <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
                 <button type="button" id="clearFilters" class="btn btn-secondary btn-sm ms-2 w-100">Limpar</button>
             </div>
@@ -78,54 +77,56 @@
 <script>
 document.getElementById("filterForm").addEventListener("submit", function(event) {
     event.preventDefault();
-    
+
     let formData = new FormData(this);
     let queryString = new URLSearchParams(formData).toString();
-    
+
     fetch("{{ route('relatorios.ligacoes') }}?" + queryString, {
         headers: { "X-Requested-With": "XMLHttpRequest" }
     })
     .then(response => response.json())
     .then(data => {
-        atualizarTabela(data.chamadas.data);
+        atualizarTabela(data.chamadas);
     })
     .catch(error => console.error("Erro ao buscar os dados:", error));
 });
 
-// Função para atualizar a tabela com os novos dados
 function atualizarTabela(chamadas) {
     let tableBody = document.getElementById("table-body");
-    tableBody.innerHTML = ""; 
-    
-    chamadas.forEach(chamada => {
-        let row = `<tr>
-            <td>${new Date(chamada.calldate).toLocaleString()}</td>
-            <td>${chamada.src}</td>
-            <td>${chamada.dst}</td>
-            <td>${chamada.uniqueid}</td>
-            <td>${chamada.duration} segundos</td>
-            <td>${chamada.disposition}</td>
-            <td>${chamada.lastdata}</td>
-            <td>${chamada.Agente}</td>
-            <td>${chamada.recordingfile ? `<a href="/gravacoes/${chamada.recordingfile}" class="btn btn-success btn-sm" download>Baixar</a>` : '<span class="text-muted">Sem gravação</span>'}</td>
-        </tr>`;
+    tableBody.innerHTML = "";
+
+    chamadas.data.forEach(chamada => {
+        let data = new Date(chamada.calldate).toLocaleString('pt-BR');
+        let row = `
+            <tr>
+                <td>${data}</td>
+                <td>${chamada.src}</td>
+                <td>${chamada.dst}</td>
+                <td>${chamada.uniqueid}</td>
+                <td>${chamada.duration} segundos</td>
+                <td>${chamada.disposition}</td>
+                <td>${chamada.lastdata}</td>
+                <td>${chamada.Agente}</td>
+                <td>${chamada.recordingfile ? `<a href="/gravacoes/${chamada.recordingfile}" class="btn btn-success btn-sm" download>Baixar</a>` : '<span class="text-muted">Sem gravação</span>'}</td>
+            </tr>`;
         tableBody.innerHTML += row;
     });
+
+    // Atualizar paginação (opcional: pode carregar dinamicamente também)
+    document.getElementById("pagination-links").innerHTML = "";
 }
 
-// Evento para limpar os filtros e recarregar os dados
 document.getElementById("clearFilters").addEventListener("click", function() {
     document.getElementById("filterForm").reset();
-    
+
     fetch("{{ route('relatorios.ligacoes') }}", {
         headers: { "X-Requested-With": "XMLHttpRequest" }
     })
     .then(response => response.json())
     .then(data => {
-        atualizarTabela(data.chamadas.data);
+        atualizarTabela(data.chamadas);
     })
     .catch(error => console.error("Erro ao buscar os dados:", error));
 });
 </script>
-
 @endsection

@@ -63,6 +63,8 @@ Route::get('/consulta-estado', [RamalController::class, 'consultarEstado']);
 Route::get('/painel-atendimento', [PainelAtendimentoController::class, 'index'])->name('painel-atendimento');
 Route::post('/associar-ramal', [PainelAtendimentoController::class, 'associar'])->name('associar-ramal');
 Route::post('/desassociar-ramal', [PainelAtendimentoController::class, 'desassociar'])->name('desassociar-ramal');
+Route::post('/protocolo', [PainelAtendimentoController::class, 'buscarProtocolo']);
+
 //Route::delete('/desassociar-ramal', [PainelAtendimentoController::class, 'desassociar'])->name('desassociar-ramal');
 
 Route::prefix('ramais')->name('ramais.')->group(function () {

@@ -814,16 +814,17 @@
 							</div>
 							<!--Conteudo blade-->
 							<!--end::Content wrapper-->
-						<!--begin::Footer-->
-						<div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+							<!--begin::Footer-->
+						<div id="kt_app_footer" class="app-footer d-flex align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3 px-4 border-top">
 							<!--begin::Copyright-->
-							<div class="text-dark order-2 order-md-1">
+							<div class="text-dark order-2 order-md-1 text-center text-md-start">
 								<span class="text-muted fw-semibold me-1">2025&copy;</span>
-								<a target="_blank" class="text-gray-800 text-hover-primary">Future Tec</a>
+								<a href="https://fttelecom.cloud" target="_blank" class="text-gray-800 text-hover-primary fw-bold">Future Tec</a>
 							</div>
 							<!--end::Copyright-->
 						</div>
 						<!--end::Footer-->
+
 					</div>
 					<!--end:::Main-->
 		<!--end::App-->

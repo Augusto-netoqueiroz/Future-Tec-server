@@ -37,7 +37,7 @@
                 Associar Ramal
             </button>
         @endif
-        
+
         <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#minhasLigacoesModal">
             Minhas Ligações
         </button>
@@ -51,6 +51,7 @@
         <p><strong>Fila:</strong> <span id="infoFila"></span></p>
         <p><strong>Tempo:</strong> <span id="infoTempo"></span></p>
         <p><strong>Canal:</strong> <span id="infoChannel"></span></p>
+        <p><strong>Protocolo:</strong> <span id="infoProtocolo"></span></p>
     </div>
 </div>
 
@@ -100,13 +101,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
 <script>
-    const socket = io("http://93.127.212.237:4000");
+    const socket = io("https://fttelecom.cloud:4000");
     const usuarioAutenticado = "{{ auth()->user()->name }}";
     const csrfToken = "{{ csrf_token() }}";
     const status = "Em Chamada";
 
+    const chamadasAtivas = {};
+    let ultimaChamadaExibida = null;
+
     document.addEventListener("DOMContentLoaded", () => {
         carregarTodasLigacoes();
+
+        const ultima = localStorage.getItem("ultimaChamada");
+        if (ultima) {
+            const call = JSON.parse(ultima);
+            exibirPainelChamada(call);
+        }
     });
 
     socket.on('fetch-unified-data-response', (data) => {
@@ -124,88 +134,107 @@
             chamadas.forEach(call => salvarLigacao(call));
         }
     });
-    
-   
 
-    const chamadasAtivas = {}; // Armazena chamadas ativas para evitar múltiplos salvamentos
-
-function salvarLigacao(call) {
-    if (!call || !call.user_name || !call.channel) {
-        console.error("Call inválida:", call);
-        return;
-    }
-
-    const callId = call.channel; // Usa o canal como identificador único
-
-    if (!chamadasAtivas[callId]) {
-        // Primeira vez que essa chamada aparece, salva imediatamente
-        chamadasAtivas[callId] = {
-            salvaInicial: false,
-            ultimaLigacao: call,
-            ativa: true // Marca como ligação ativa
-        };
-
-        registrarLigacao(call); // Salva a primeira ocorrência
-        chamadasAtivas[callId].salvaInicial = true;
-    } else {
-        // Atualiza os dados da chamada, mas não salva no momento
-        chamadasAtivas[callId].ultimaLigacao = call;
-    }
-
-    // Verifica se a chamada foi encerrada
-    if (call.call_state !== "Em Chamada") {
-        if (chamadasAtivas[callId].ativa) {
-            registrarLigacao(chamadasAtivas[callId].ultimaLigacao); // Salva a última ocorrência
-            chamadasAtivas[callId].ativa = false; // Marca como finalizada
+    function salvarLigacao(call) {
+        if (!call || !call.user_name || !call.channel) {
+            console.error("Call inválida:", call);
+            return;
         }
 
-        delete chamadasAtivas[callId]; // Remove do cache após salvar
-    }
-}
+        const callId = call.channel;
 
-function registrarLigacao(call) {
+        if (!chamadasAtivas[callId]) {
+            chamadasAtivas[callId] = {
+                salvaInicial: false,
+                ultimaLigacao: call,
+                ativa: true
+            };
 
-
-    axios.post("/calls/store", {
-        user_name: call.user_name,
-        ramal: call.name,
-        calling_to: call.calling_to,
-        queue_name: call.queueName, // Agora só adiciona se realmente existir
-        call_duration: call.call_duration || "00:00",
-        channel: call.channel
-    }, {
-        headers: {
-            "X-CSRF-TOKEN": csrfToken,
-            "Content-Type": "application/json"
+            registrarLigacao(call);
+            chamadasAtivas[callId].salvaInicial = true;
+            exibirPainelChamada(call);
+        } else {
+            chamadasAtivas[callId].ultimaLigacao = call;
         }
-    })
-    .then(response => {
-        console.log("Ligação salva com sucesso:", response.data);
-    })
-    .catch(error => {
-        console.error("Erro ao salvar ligação:", error.response?.data || error.message);
-    });
+
+        if (call.call_state !== "Em Chamada" && chamadasAtivas[callId].ativa) {
+            registrarLigacao(chamadasAtivas[callId].ultimaLigacao);
+            chamadasAtivas[callId].ativa = false;
+        }
+    }
+
+    function exibirPainelChamada(call) {
+        if (!call) return;
+
+    ultimaChamadaExibida = call;
+
+    document.getElementById("infoUsuario").textContent = call.user_name || "-";
+    document.getElementById("infoRamal").textContent = call.name || call.ramal || "-";
+    document.getElementById("infoNumero").textContent = call.calling_to || "-";
+    document.getElementById("infoFila").textContent = call.queueName || call.queue_name || "-";
+    document.getElementById("infoTempo").textContent = call.call_duration || "00:00";
+    document.getElementById("infoChannel").textContent = call.channel || "-";
+    document.getElementById("infoProtocolo").textContent = call.protocolo || "-";
+
+    document.getElementById("painelChamada").style.display = "block";
+    document.getElementById("painelChamada").style.fontSize = "1.25rem";
+    document.getElementById("painelChamada").style.border = "2px solid #0d6efd";
+    document.getElementById("painelChamada").style.backgroundColor = "#eaf4ff";
+
+    localStorage.setItem("ultimaChamada", JSON.stringify(call));
 }
 
 
+    function registrarLigacao(call) {
+        axios.post("/calls/store", {
+            user_name: call.user_name,
+            ramal: call.name,
+            calling_to: call.calling_to,
+            queue_name: call.queueName,
+            call_duration: call.call_duration || "00:00",
+            channel: call.channel
+        }, {
+            headers: {
+                "X-CSRF-TOKEN": csrfToken,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => {
+            console.log("Ligação salva com sucesso:", response.data);
+        })
+        .catch(error => {
+            console.error("Erro ao salvar ligação:", error.response?.data || error.message);
+        });
+    }
 
-    
     async function carregarTodasLigacoes() {
-        try {
-            const response = await fetch("/calls/user");
-            const ligacoes = await response.json();
-            const lista = document.getElementById("listaLigacoes");
-            lista.innerHTML = "";
+    try {
+        const response = await fetch("/calls/user");
+        const ligacoes = await response.json();
+        const lista = document.getElementById("listaLigacoes");
+        lista.innerHTML = "";
 
-            ligacoes.forEach(call => {
-                let item = document.createElement("li");
-                item.classList.add("list-group-item");
-                item.innerHTML = `<strong>${call.user_name}</strong> - ${call.ramal} - ${call.calling_to} - ${call.queue_name} - ${call.call_duration} <br> <small>Canal: ${call.channel}</small>`;
-                lista.appendChild(item);
-            });
-        } catch (error) {
-            console.error("Erro ao carregar ligações:", error);
+        ligacoes.forEach(call => {
+            let item = document.createElement("li");
+            item.classList.add("list-group-item");
+            item.innerHTML = `
+                <strong>${call.user_name}</strong> - ${call.ramal} - ${call.calling_to} - ${call.queue_name} - ${call.call_duration}
+                <br>
+                <small>Canal: ${call.channel}</small><br>
+                <small>Protocolo: ${call.protocolo || '-'}</small>
+            `;
+            lista.appendChild(item);
+        });
+
+        // Exibir a última chamada no painel principal
+        if (ligacoes.length > 0) {
+            exibirPainelChamada(ligacoes[0]); // a mais recente
         }
+
+    } catch (error) {
+        console.error("Erro ao carregar ligações:", error);
     }
+}
+
 </script>
 @endsection
