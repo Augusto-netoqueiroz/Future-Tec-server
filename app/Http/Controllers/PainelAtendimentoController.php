@@ -139,19 +139,18 @@ class PainelAtendimentoController extends Controller
 }
 
 
- 
-
 public function storeCall(Request $request)
 {
     Log::info('📥 Recebendo chamada para salvar:', $request->all());
 
-    // Buscar o protocolo (uniqueid)
-    $protocolo = DB::table('cdr')
-        ->where('channel', 'like', '%' . $request->channel . '%')
-        ->orderByDesc('calldate')
-        ->value('uniqueid');
+    // Protocolo já deve vir do WebSocket em tempo real
+    $protocolo = $request->protocolo;
 
-    // Evitar salvar duplicado
+    if (!$protocolo) {
+        Log::warning('⚠️ Protocolo não informado na requisição. Canal: ' . $request->channel);
+    }
+
+    // Verifica duplicidade pela combinação de campos + protocolo
     $existe = Call::where('user_name', $request->user_name)
         ->where('ramal', $request->ramal)
         ->where('calling_to', $request->calling_to)
@@ -180,59 +179,17 @@ public function storeCall(Request $request)
     return response()->json(['message' => 'Ligação salva com sucesso!', 'call' => $call]);
 }
 
+public function getUserCalls()
+{
+    $userName = auth()->user()->name;
 
-    public function getUserCalls()
-    {
-        $userName = auth()->user()->name;
-    
-        $calls = Call::where('user_name', $userName)
-            ->orderByDesc('created_at')
-            ->get();
-    
-        // Adiciona o protocolo (uniqueid) manualmente para cada chamada
-        $callsComProtocolo = $calls->map(function ($call) {
-            $protocolo = DB::table('cdr')
-                ->where('channel', 'like', '%' . $call->channel . '%')
-                ->orderByDesc('calldate')
-                ->value('uniqueid');
-    
-            $call->protocolo = $protocolo ?? null;
-            return $call;
-        });
-    
-        return response()->json($callsComProtocolo);
-    }
-    
+    $calls = Call::where('user_name', $userName)
+        ->orderByDesc('created_at')
+        ->get();
 
+    return response()->json($calls); // Agora o protocolo já está salvo na tabela
+}
 
-
-     
-
-   
-
-    public function buscarProtocolo(Request $request)
-    {
-        $channel = $request->input('channel');
-        Log::info("🔍 Buscando protocolo para canal: " . $channel);
-    
-        if (!$channel) {
-            Log::warning("❌ Canal não informado");
-            return response()->json(['error' => 'Canal não informado'], 400);
-        }
-    
-        $protocolo = DB::table('cdr')
-            ->where('channel', 'like', "%$channel%")
-            ->orderByDesc('calldate')
-            ->value('uniqueid');
-    
-        if (!$protocolo) {
-            Log::warning("⚠️ Protocolo não encontrado para canal: " . $channel);
-            return response()->json(['error' => 'Protocolo não encontrado'], 404);
-        }
-    
-        Log::info("✅ Protocolo encontrado: " . $protocolo);
-        return response()->json(['protocolo' => $protocolo]);
-    }
-    
-
+ 
+ 
 }

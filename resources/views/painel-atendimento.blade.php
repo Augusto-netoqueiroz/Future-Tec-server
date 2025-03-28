@@ -164,7 +164,7 @@
     }
 
     function exibirPainelChamada(call) {
-        if (!call) return;
+    if (!call) return;
 
     ultimaChamadaExibida = call;
 
@@ -174,13 +174,9 @@
     document.getElementById("infoFila").textContent = call.queueName || call.queue_name || "-";
     document.getElementById("infoTempo").textContent = call.call_duration || "00:00";
     document.getElementById("infoChannel").textContent = call.channel || "-";
-    document.getElementById("infoProtocolo").textContent = call.protocolo || "-";
+    document.getElementById("infoProtocolo").textContent = call.protocolo || "-"; // já vem direto
 
     document.getElementById("painelChamada").style.display = "block";
-    document.getElementById("painelChamada").style.fontSize = "1.25rem";
-    document.getElementById("painelChamada").style.border = "2px solid #0d6efd";
-    document.getElementById("painelChamada").style.backgroundColor = "#eaf4ff";
-
     localStorage.setItem("ultimaChamada", JSON.stringify(call));
 }
 
@@ -192,19 +188,14 @@
             calling_to: call.calling_to,
             queue_name: call.queueName,
             call_duration: call.call_duration || "00:00",
-            channel: call.channel
+            channel: call.channel,
+            protocolo: call.protocolo // <-- Aqui está o ajuste importante
         }, {
             headers: {
                 "X-CSRF-TOKEN": csrfToken,
                 "Content-Type": "application/json"
             }
         })
-        .then(response => {
-            console.log("Ligação salva com sucesso:", response.data);
-        })
-        .catch(error => {
-            console.error("Erro ao salvar ligação:", error.response?.data || error.message);
-        });
     }
 
     async function carregarTodasLigacoes() {
