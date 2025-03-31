@@ -27,7 +27,6 @@
         @if ($ramalDoUsuario)
             <form action="{{ route('desassociar-ramal') }}" method="POST">
                 @csrf
-                @method('DELETE')
                 <button type="submit" class="btn btn-danger">
                     Desassociar Ramal ({{ $ramalDoUsuario->name }})
                 </button>
@@ -43,17 +42,50 @@
         </button>
     </div>
 
-    <div id="painelChamada" class="card mt-4 p-3 shadow-sm" style="display: none;">
-        <h3 class="fs-5 fw-bold">Última Chamada</h3>
-        <p><strong>Usuário:</strong> <span id="infoUsuario"></span></p>
-        <p><strong>Ramal:</strong> <span id="infoRamal"></span></p>
-        <p><strong>Número:</strong> <span id="infoNumero"></span></p>
-        <p><strong>Fila:</strong> <span id="infoFila"></span></p>
-        <p><strong>Tempo:</strong> <span id="infoTempo"></span></p>
-        <p><strong>Canal:</strong> <span id="infoChannel"></span></p>
-        <p><strong>Protocolo:</strong> <span id="infoProtocolo"></span></p>
+    <div id="painelChamada" class="card mt-4 shadow-sm p-4 border-start border-4 border-primary" 
+     style="display: none; background-color: #f0f8ff; border-radius: 1rem; max-width: 800px; margin: 0 auto;">
+    
+    <h3 class="fs-3 fw-bold text-center text-primary mb-4">📞 Última Chamada</h3>
+
+    <!-- Protocolo -->
+    <div class="text-center mb-3">
+        <div class="text-muted text-uppercase small">Protocolo</div>
+        <div id="infoProtocolo" class="display-6 fw-bold text-dark">-</div>
+    </div>
+
+    <!-- Fila -->
+    <div class="text-center mb-4">
+        <div class="text-muted text-uppercase small">Fila</div>
+        <div id="infoFila" class="fs-2 fw-bold text-success">-</div>
+    </div>
+
+    <hr>
+
+    <!-- Demais informações -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="text-muted small">Usuário</div>
+            <div class="fw-semibold" id="infoUsuario">-</div>
+        </div>
+        <div class="col-md-6">
+            <div class="text-muted small">Ramal</div>
+            <div class="fw-semibold" id="infoRamal">-</div>
+        </div>
+        <div class="col-md-6">
+            <div class="text-muted small">Número</div>
+            <div class="fw-semibold" id="infoNumero">-</div>
+        </div>
+        <div class="col-md-6">
+            <div class="text-muted small">Tempo</div>
+            <div class="fw-semibold" id="infoTempo">00:00</div>
+        </div>
+        <div class="col-12">
+            <div class="text-muted small">Canal</div>
+            <div class="fw-semibold" id="infoChannel">-</div>
+        </div>
     </div>
 </div>
+
 
 <!-- Modal de Associar Ramal -->
 <div class="modal fade" id="ramalModal" tabindex="-1" aria-labelledby="ramalModalLabel" aria-hidden="true">

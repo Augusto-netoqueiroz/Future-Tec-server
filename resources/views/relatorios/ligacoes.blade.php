@@ -6,8 +6,9 @@
 
     <form id="filterForm" class="mb-4">
         <div class="row align-items-center">
+            <!-- Campo de busca (Origem, Destino, Unique ID e Protocolo) -->
             <div class="col-md-3 mb-3">
-                <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Pesquisar por Origem, Destino ou Unique ID">
+                <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Pesquisar por Origem, Destino, Unique ID ou Protocolo">
             </div>
             <div class="col-md-2 mb-3">
                 <input type="date" id="start_date" name="start_date" class="form-control form-control-sm">
@@ -23,6 +24,12 @@
                     @endforeach
                 </select>
             </div>
+            <!-- Opcional: campo exclusivo para protocolo (se necessário) -->
+            <!--
+            <div class="col-md-2 mb-3">
+                <input type="text" id="protocolo" name="protocolo" class="form-control form-control-sm" placeholder="Filtrar por Protocolo">
+            </div>
+            -->
             <div class="col-md-3 mb-3 d-flex">
                 <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
                 <button type="button" id="clearFilters" class="btn btn-secondary btn-sm ms-2 w-100">Limpar</button>
@@ -42,6 +49,7 @@
                     <th>Status</th>
                     <th>Lastdata</th>
                     <th>Agente</th>
+                    <th>Protocolo</th> <!-- Nova coluna -->
                     <th>Gravação</th>
                 </tr>
             </thead>
@@ -56,6 +64,7 @@
                         <td>{{ $chamada->disposition }}</td>
                         <td>{{ $chamada->lastdata }}</td>
                         <td>{{ $chamada->Agente }}</td>
+                        <td>{{ $chamada->protocolo }}</td> <!-- Nova coluna -->
                         <td>
                             @if($chamada->recordingfile)
                                 <a href="{{ url('gravacoes/' . $chamada->recordingfile) }}" class="btn btn-success btn-sm" download>Baixar</a>
@@ -107,12 +116,13 @@ function atualizarTabela(chamadas) {
                 <td>${chamada.disposition}</td>
                 <td>${chamada.lastdata}</td>
                 <td>${chamada.Agente}</td>
+                <td>${chamada.protocolo}</td>
                 <td>${chamada.recordingfile ? `<a href="/gravacoes/${chamada.recordingfile}" class="btn btn-success btn-sm" download>Baixar</a>` : '<span class="text-muted">Sem gravação</span>'}</td>
             </tr>`;
         tableBody.innerHTML += row;
     });
 
-    // Atualizar paginação (opcional: pode carregar dinamicamente também)
+    // Atualiza a paginação, se necessário
     document.getElementById("pagination-links").innerHTML = "";
 }
 
