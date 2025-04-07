@@ -1,4 +1,4 @@
-@extends('day.layout')
+@extends('day.layout') 
 
 @section('content')
 
@@ -18,53 +18,62 @@
     @endif
 
     <table class="table table-striped table-hover align-middle mt-3">
-        <thead>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Data Início</th>
+            <th>Data Fim</th>
+            <th>Áudio</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Concluídos</th>
+            <th>Atendidos</th>
+            <th>Não Atendidos</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        <a href="{{ route('campaign.criar') }}" class="btn btn-primary mt-3">Criar Nova Campanha</a>
+        @foreach ($campaigns as $campaign)
             <tr>
-                <th>#</th>
-                <th>Nome</th>
-                <th>Data Início</th>
-                <th>Data Fim</th>
-                <th>Áudio</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            <a href="{{ route('campaign.criar') }}" class="btn btn-primary mt-3">Criar Nova Campanha</a>
-            @foreach ($campaigns as $campaign)
-                <tr>
-                    <td>{{ $campaign->id }}</td>
-                    <td>{{ $campaign->name }}</td>
-                    <td>{{ $campaign->start_date }}</td>
-                    <td>{{ $campaign->end_date }}</td>
-                    <td>{{ $campaign->audio_file }}</td>
-                    <td>
-                        @if ($campaign->status == 'pending')
-                            <span class="badge bg-warning">Pendente</span>
+                <td>{{ $campaign->id }}</td>
+                <td>{{ $campaign->name }}</td>
+                <td>{{ $campaign->start_date }}</td>
+                <td>{{ $campaign->end_date }}</td>
+                <td>{{ $campaign->audio_file }}</td>
+                <td>
+                    @if ($campaign->status == 'pending')
+                        <span class="badge bg-warning">Pendente</span>
+                    @elseif ($campaign->status == 'in_progress')
+                        <span class="badge bg-primary">Em Progresso</span>
+                    @elseif ($campaign->status == 'stopped')
+                        <span class="badge bg-secondary">Parada</span>
+                    @else
+                        <span class="badge bg-success">Concluída</span>
+                    @endif
+                </td>
+                <td>{{ $campaign->total }}</td>
+                <td>{{ $campaign->concluídos ?? $campaign->concluidos }}</td>
+                <td>{{ $campaign->atendidos }}</td>
+                <td>{{ $campaign->nao_atendidos }}</td>
+                <td class="text-center">
+                    <!-- Botões de ação com base no status -->
+                    <div class="d-flex justify-content-center gap-2">
+                        @if ($campaign->status == 'pending' || $campaign->status == 'stopped')
+                            <button class="btn btn-sm btn-success start-campaign" data-id="{{ $campaign->id }}">Iniciar</button>
                         @elseif ($campaign->status == 'in_progress')
-                            <span class="badge bg-primary">Em Progresso</span>
-                        @elseif ($campaign->status == 'stopped')
-                            <span class="badge bg-secondary">Parada</span>
-                        @else
-                            <span class="badge bg-success">Concluída</span>
+                            <button class="btn btn-sm btn-danger stop-campaign" data-id="{{ $campaign->id }}">Parar</button>
                         @endif
-                    </td>
-                    <td class="text-center">
-                        <!-- Botões de ação com base no status -->
-                        <div class="d-flex justify-content-center gap-2">
-                            @if ($campaign->status == 'pending' || $campaign->status == 'stopped')
-                                <button class="btn btn-sm btn-success start-campaign" data-id="{{ $campaign->id }}">Iniciar</button>
-                            @elseif ($campaign->status == 'in_progress')
-                                <button class="btn btn-sm btn-danger stop-campaign" data-id="{{ $campaign->id }}">Parar</button>
-                            @endif
-                            <button class="btn btn-sm btn-warning reset-campaign" data-id="{{ $campaign->id }}">Resetar</button>
-                            <a href="{{ route('campaign.delete', $campaign->id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta campanha?')">Excluir</a>
-                        </div>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+                        <button class="btn btn-sm btn-warning reset-campaign" data-id="{{ $campaign->id }}">Resetar</button>
+                        <a href="{{ route('campaign.delete', $campaign->id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir esta campanha?')">Excluir</a>
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+
     
     <!-- Paginação -->
     <div class="d-flex justify-content-between align-items-center mt-3">
@@ -99,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
-                location.reload(); // Atualiza a página
+                location.reload();
             })
             .catch(error => {
                 alert("Erro ao iniciar a campanha!");
@@ -126,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
-                location.reload(); // Atualiza a página
+                location.reload();
             })
             .catch(error => {
                 alert("Erro ao parar a campanha!");
@@ -153,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
-                location.reload(); // Atualiza a página
+                location.reload();
             })
             .catch(error => {
                 alert("Erro ao resetar a campanha!");

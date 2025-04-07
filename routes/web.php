@@ -23,13 +23,17 @@ use App\Http\Controllers\Liguetalkcontroller;
 use App\Http\Controllers\GlpiController;
 use \App\Http\Middleware\TesteMiddleware;
 use App\Http\Controllers\MagnusController;
+use App\Http\Controllers\LandingPageController;
 
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('home');
     }
-    return view('login');
+    return redirect()->route('landing.page');
 })->name('root');
+
+Route::get('/page', [LandingPageController::class, 'index'])->name('landing.page');
+
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
@@ -276,3 +280,6 @@ Route::get('/discord/banco', [GlpiController::class, 'getDiscordbanco']);
 Route::get('/alldata', [GlpiController::class, 'getAllData']);
 
 Route::get('/process-tickets', [GlpiController::class, 'processAndCreateTickets']);
+
+
+//Route::get('/page', [LandingPageController::class, 'index']);

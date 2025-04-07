@@ -15,14 +15,58 @@ use App\Services\AmiService;
 
 class CampaignController extends Controller
 {
+    // app/Http/Controllers/CampaignController.php
+
+ 
+
     public function index()
     {
-
-        $campaigns = Campaign::paginate(10); // Paginação com 10 itens por págin
+        $campaigns = Campaign::paginate(10); // Paginação com 10 itens por página
         Log::info('Campaign index method called.');
         Log::info('Campaigns retrieved: ', ['count' => $campaigns->count()]);
+    
+        // Para cada campanha, calcula as métricas
+        foreach ($campaigns as $campaign) {
+            // Busca os contatos associados à campanha
+            $contacts = DB::table('campaign_contacts')
+                ->where('campaign_id', $campaign->id)
+                ->get();
+    
+            $total = $contacts->count();
+            $concluidos = 0;
+            $atendidos = 0;
+    
+            foreach ($contacts as $contact) {
+                // Monta o padrão conforme: idContato - nomeCampanha
+                $pattern = $contact->id . '-' . $campaign->name;
+    
+                // Busca apenas o último registro (status final) na tabela cdr para o padrão encontrado
+                $lastCall = DB::table('cdr')
+                    ->where('userfield', $pattern)
+                    ->orderBy('calldate', 'desc')
+                    ->first();
+    
+                if ($lastCall) {
+                    $concluidos++;  // Conta apenas o último registro como status final
+    
+                    // Considera a ligação atendida quando disposition for 'ANSWERED'
+                    if ($lastCall->disposition === 'ANSWERED') {
+                        $atendidos++;
+                    }
+                }
+            }
+    
+            // Atribui os valores calculados à instância da campanha
+            $campaign->total = $total;
+            $campaign->concluidos = $concluidos;
+            $campaign->atendidos = $atendidos;
+            $campaign->nao_atendidos = $concluidos - $atendidos;
+        }
+    
         return view('campaign.index', compact('campaigns'));
     }
+    
+
 
 
     public function report()
@@ -394,6 +438,40 @@ public function updateStatusFromCdr()
     }
     
     
-    
+   
+
+public function getMetricsAttribute()
+{
+    // Busca os contatos associados à campanha
+    $contacts = \DB::table('campains_contats')
+        ->where('campaign_id', $this->id)
+        ->get();
+
+    $total = $contacts->count();
+    $concluidos = 0;
+    $atendidos = 0;
+
+    foreach ($contacts as $contact) {
+        // Monta o padrão conforme o formato definido (id-nomeDaCampanha)
+        $pattern = $contact->id . '-' . $this->name;
+        $calls = \DB::table('cdr')
+            ->where('userfield', $pattern)
+            ->get();
+
+        $concluidos += $calls->count();
+        // Supondo que 'ANSWERED' define a ligação atendida.
+        $atendidos += $calls->where('disposition', 'ANSWERED')->count();
+    }
+
+    $nao_atendidos = $concluidos - $atendidos;
+
+    return [
+        'total'          => $total,
+        'concluidos'     => $concluidos,
+        'atendidos'      => $atendidos,
+        'nao_atendidos'  => $nao_atendidos
+    ];
+}
+ 
 
 }
