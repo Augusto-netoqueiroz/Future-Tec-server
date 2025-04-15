@@ -103,14 +103,16 @@ class CampaignController extends Controller
         // Validação dos dados do formulário
         Log::info('Iniciando validação dos dados...');
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'context' => 'required|string',
-            'extension' => 'required|string',
-            'priority' => 'required|integer',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-            'numbers_file' => 'required|file|mimes:csv,txt',
-            'audio_file' => 'required|file|mimes:wav,mp3',
+            'name'        => 'required|string|max:255',
+            'context'     => 'required|string',
+            'extension'   => 'required|string',
+            'priority'    => 'required|integer',
+            'start_date'  => 'required|date',
+            'end_date'    => 'required|date|after:start_date',
+            'numbers_file'=> 'required|file|mimes:csv,txt',
+            'audio_file'  => 'required|file|mimes:wav,mp3',
+            // Adicione a validação de batch_size (1 a 100)
+            'batch_size'  => 'required|integer|min:1|max:100',
         ]);
 
         Log::info('Validação concluída com sucesso.', ['validated_data' => $validated]);
@@ -118,15 +120,15 @@ class CampaignController extends Controller
         // Processando as datas
         Log::info('Processando as datas...');
         $startDate = Carbon::parse($validated['start_date'])->format('Y-m-d H:i:s');
-        $endDate = Carbon::parse($validated['end_date'])->format('Y-m-d H:i:s');
+        $endDate   = Carbon::parse($validated['end_date'])->format('Y-m-d H:i:s');
 
         // Movendo o arquivo de áudio para o diretório do Asterisk
-        $asteriskPath = '/var/lib/asterisk/sounds/custom/';
-        $audioFile = $request->file('audio_file');
-        $audioFileName = time() . '_' . $audioFile->getClientOriginalName();
+        $asteriskPath   = '/var/lib/asterisk/sounds/custom/';
+        $audioFile      = $request->file('audio_file');
+        $audioFileName  = time() . '_' . $audioFile->getClientOriginalName();
 
         Log::info('Movendo o arquivo de áudio...', [
-            'file_name' => $audioFileName,
+            'file_name'   => $audioFileName,
             'destination' => $asteriskPath,
         ]);
 
@@ -137,58 +139,60 @@ class CampaignController extends Controller
         // Processando o arquivo de números
         Log::info('Processando o arquivo de números...');
         $numbersPath = $request->file('numbers_file')->store('uploads/numbers');
-        $numbers = array_map('str_getcsv', file(Storage::path($numbersPath)));
+        $numbers     = array_map('str_getcsv', file(Storage::path($numbersPath)));
 
-        $validNumbers = [];
+        $validNumbers   = [];
         $invalidNumbers = [];
 
         foreach ($numbers as $line) {
             $phoneNumber = isset($line[0]) ? preg_replace('/[^0-9]/', '', $line[0]) : null; // Remove caracteres não numéricos
-            $name = isset($line[1]) ? trim($line[1]) : null;
+            $name        = isset($line[1]) ? trim($line[1]) : null;
 
             if (!empty($phoneNumber) && strlen($phoneNumber) <= 15) {
                 $validNumbers[] = [
-                    'campaign_id' => null, // Campanha será criada posteriormente
+                    'campaign_id'  => null, // Campanha será criada posteriormente
                     'phone_number' => $phoneNumber,
-                    'status' => 'pending',
-                    'name' => $name,
+                    'status'       => 'pending',
+                    'name'         => $name,
                 ];
             } else {
                 $invalidNumbers[] = [
                     'phone_number' => $line[0] ?? 'N/A',
-                    'reason' => empty($phoneNumber) ? 'Número vazio ou inválido' : 'Excede 15 caracteres',
+                    'reason'       => empty($phoneNumber) ? 'Número vazio ou inválido' : 'Excede 15 caracteres',
                 ];
             }
         }
 
         Log::info('Números processados.', [
-            'valid_numbers_count' => count($validNumbers),
+            'valid_numbers_count'   => count($validNumbers),
             'invalid_numbers_count' => count($invalidNumbers),
         ]);
 
         // Criando a campanha
         Log::info('Criando a campanha...');
         $campaign = Campaign::create([
-            'name' => $validated['name'],
+            'name'       => $validated['name'],
             'start_date' => $startDate,
-            'end_date' => $endDate,
+            'end_date'   => $endDate,
             'audio_file' => $audioFileName,
-            'status' => 'pending',
+            'status'     => 'pending',
+            // Salva o batch_size informado pelo usuário
+            'batch_size' => $validated['batch_size'],
         ]);
 
         // Salvando os números válidos
         foreach ($validNumbers as &$validNumber) {
             $validNumber['campaign_id'] = $campaign->id;
             CampaignContact::create($validNumber);
-        
-        Log::info('Inserindo números válidos...', ['valid_numbers' => $validNumbers]);
         }
+
+        Log::info('Inserindo números válidos...', ['valid_numbers' => $validNumbers]);
 
         // Log dos números inválidos (se houver)
         if (!empty($invalidNumbers)) {
             Log::warning('⚠️ Números inválidos encontrados.', [
                 'invalid_numbers' => $invalidNumbers,
-                'total_invalid' => count($invalidNumbers),
+                'total_invalid'   => count($invalidNumbers),
             ]);
         }
 
@@ -252,7 +256,10 @@ class CampaignController extends Controller
 
         // Verificar horários permitidos
         $currentDateTime = Carbon::now();
-        if ($currentDateTime->lt(Carbon::parse($campaign->start_date)) || $currentDateTime->gt(Carbon::parse($campaign->end_date))) {
+        if (
+            $currentDateTime->lt(Carbon::parse($campaign->start_date)) ||
+            $currentDateTime->gt(Carbon::parse($campaign->end_date))
+        ) {
             Log::warning("Campanha fora do horário permitido. Início: {$campaign->start_date}, Fim: {$campaign->end_date}, Agora: {$currentDateTime}");
             return response()->json(['message' => 'Campanha não pode ser iniciada fora do horário configurado.'], 403);
         }
@@ -279,12 +286,15 @@ class CampaignController extends Controller
         // Fazer login no Asterisk AMI
         fputs($socket, "Action: Login\r\nUsername: $username\r\nSecret: $password\r\nEvents: on\r\n\r\n");
 
-        // Processar contatos em lotes de 5
+        // Recuperar o batch_size definido na campanha
+        $batchSize = $campaign->batch_size ?? 5;  // Se não vier, assume 5, por segurança
+
+        // Processar contatos em lotes de $batchSize
         while (true) {
-            Log::info("Buscando até 5 contatos pendentes para a campanha ID {$campaignId}...");
+            Log::info("Buscando até {$batchSize} contatos pendentes para a campanha ID {$campaignId}...");
             $contacts = CampaignContact::where('campaign_id', $campaignId)
                                        ->where('status', 'pending')
-                                       ->take(5)
+                                       ->take($batchSize) // Substituiu o fixo '30'
                                        ->get();
 
             if ($contacts->isEmpty()) {
@@ -325,7 +335,7 @@ class CampaignController extends Controller
             }
 
             Log::info("Aguardando 30 segundos antes de processar o próximo lote de contatos...");
-            sleep(30); // Espera 30 segundos antes de buscar o próximo lote
+            sleep(30); 
         }
 
         // Fazer logoff do AMI

@@ -54,6 +54,21 @@
             @enderror
         </div>
 
+                    <div class="mb-3">
+                <label for="batch_size" class="form-label">Quantidade de Chamadas Simultâneas (1 a 100)</label>
+                <input type="number" 
+                    name="batch_size" 
+                    class="form-control @error('batch_size') is-invalid @enderror" 
+                    id="batch_size" 
+                    value="{{ old('batch_size', 5) }}" 
+                    required 
+                    min="1" 
+                    max="100">
+                @error('batch_size')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
         <div class="mb-3">
             <label for="context" class="form-label">Contexto</label>
             <input type="text" name="context" class="form-control @error('context') is-invalid @enderror" id="context" value="{{ old('context', 'default') }}" required>

@@ -15,5 +15,6 @@ class Campaign extends Model
         'end_date',
         'audio_file',
         'status',
+        'batch_size',
     ];
 }
